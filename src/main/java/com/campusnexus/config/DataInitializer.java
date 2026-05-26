@@ -17,14 +17,28 @@ public class DataInitializer implements ApplicationRunner {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
-    public DataInitializer(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public DataInitializer(UserRepository userRepository, PasswordEncoder passwordEncoder, org.springframework.jdbc.core.JdbcTemplate jdbcTemplate) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override
     public void run(ApplicationArguments args) {
+        // Automatically fix legacy database constraint issues on timetables table
+        try {
+            jdbcTemplate.execute("ALTER TABLE timetables ALTER COLUMN batch_id DROP NOT NULL");
+            jdbcTemplate.execute("ALTER TABLE timetables ALTER COLUMN from_time DROP NOT NULL");
+            jdbcTemplate.execute("ALTER TABLE timetables ALTER COLUMN to_time DROP NOT NULL");
+            jdbcTemplate.execute("ALTER TABLE timetables ALTER COLUMN start_time DROP NOT NULL");
+            jdbcTemplate.execute("ALTER TABLE timetables ALTER COLUMN end_time DROP NOT NULL");
+            logger.info("Successfully dropped NOT NULL constraints on timetables columns");
+        } catch (Exception e) {
+            logger.warn("Could not alter timetables constraints (columns may already be nullable or table not created yet): " + e.getMessage());
+        }
+
         String adminEmail = "admin@campusnexus.com";
 
         if (userRepository.existsByEmail(adminEmail)) {

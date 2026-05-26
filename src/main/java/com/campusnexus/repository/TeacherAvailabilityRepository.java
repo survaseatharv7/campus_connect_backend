@@ -1,6 +1,7 @@
 package com.campusnexus.repository;
 
 import com.campusnexus.entity.TeacherAvailability;
+import com.campusnexus.enums.TeacherAvailabilityStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -11,4 +12,5 @@ import java.util.UUID;
 public interface TeacherAvailabilityRepository extends JpaRepository<TeacherAvailability, UUID> {
     List<TeacherAvailability> findByTeacherId(UUID teacherId);
     List<TeacherAvailability> findByTeacherDepartmentId(UUID departmentId);
+    List<TeacherAvailability> findByTeacher_IdAndStatusIn(UUID teacherId, List<TeacherAvailabilityStatus> statuses);
 }

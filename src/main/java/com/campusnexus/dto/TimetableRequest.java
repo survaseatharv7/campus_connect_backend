@@ -1,5 +1,7 @@
 package com.campusnexus.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -7,7 +9,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalTime;
 import java.util.UUID;
 
 @Data
@@ -16,23 +17,35 @@ import java.util.UUID;
 @AllArgsConstructor
 public class TimetableRequest {
 
-    @NotNull(message = "Batch ID is required")
-    private UUID batchId;
-
-    @NotBlank(message = "Day of week is required")
-    private String dayOfWeek;
-
-    @NotNull(message = "Start time is required")
-    private LocalTime fromTime;
-
-    @NotNull(message = "End time is required")
-    private LocalTime toTime;
-
-    @NotBlank(message = "Subject is required")
-    private String subject;
+    @NotNull(message = "Department ID is required")
+    private UUID departmentId;
 
     @NotNull(message = "Teacher ID is required")
     private UUID teacherId;
 
-    private String room;
+    @NotBlank(message = "Subject is required")
+    private String subject;
+
+    @NotBlank(message = "Year is required")
+    private String year;
+
+    @NotNull(message = "Semester is required")
+    private int semester;
+
+    @NotBlank(message = "Division is required")
+    private String division;
+
+    @NotBlank(message = "Day of week is required")
+    private String dayOfWeek;
+
+    @NotBlank(message = "Start time is required")
+    @JsonProperty("startTime")
+    @JsonAlias({"startTime", "fromTime"})
+    private String startTime;
+
+    @NotBlank(message = "End time is required")
+    @JsonProperty("endTime")
+    @JsonAlias({"endTime", "toTime"})
+    private String endTime;
 }
+

@@ -1,5 +1,6 @@
 package com.campusnexus.entity;
 
+import com.campusnexus.enums.TimetableStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -7,7 +8,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.UUID;
 
 @Data
@@ -27,17 +27,17 @@ public class Timetable {
     private Department department;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "batch_id", nullable = false)
+    @JoinColumn(name = "batch_id")
     private Batch batch;
 
     @Column(nullable = false)
     private String dayOfWeek;
 
-    @Column(nullable = false)
-    private LocalTime fromTime;
+    @Column(name = "from_time", nullable = false)
+    private String startTime;
 
-    @Column(nullable = false)
-    private LocalTime toTime;
+    @Column(name = "to_time", nullable = false)
+    private String endTime;
 
     @Column(nullable = false)
     private String subject;
@@ -47,6 +47,22 @@ public class Timetable {
     private User teacher;
 
     private String room;
+
+    @Column(nullable = false)
+    private String year;
+
+    @Column(nullable = false)
+    private int semester;
+
+    @Column(nullable = false)
+    private String division;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private TimetableStatus status = TimetableStatus.PUBLISHED;
+
+    private String teacherName;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

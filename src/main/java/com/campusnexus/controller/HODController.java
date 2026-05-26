@@ -3,6 +3,7 @@ package com.campusnexus.controller;
 import com.campusnexus.dto.*;
 import com.campusnexus.entity.User;
 import com.campusnexus.enums.SeminarHallType;
+import com.campusnexus.enums.TimetableStatus;
 import com.campusnexus.exception.ResourceNotFoundException;
 import com.campusnexus.repository.UserRepository;
 import com.campusnexus.service.*;
@@ -156,6 +157,8 @@ public class HODController {
         return ResponseEntity.ok(ApiResponse.success("Club requests retrieved", response));
     }
 
+    // ==================== TIMETABLE ENDPOINTS ====================
+
     @PostMapping("/timetable")
     @Operation(summary = "Create timetable entry", description = "Create department timetable entry")
     @ApiResponses({
@@ -171,14 +174,16 @@ public class HODController {
     }
 
     @GetMapping("/timetable")
-    @Operation(summary = "List department timetable", description = "List department timetable")
+    @Operation(summary = "List department timetable", description = "Returns PUBLISHED and DRAFT timetable entries (excludes DELETED and ARCHIVED)")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Timetable retrieved")
     })
     public ResponseEntity<ApiResponse<List<TimetableResponse>>> getTimetable(
             @AuthenticationPrincipal UserDetails userDetails) {
         User user = getUser(userDetails);
-        List<TimetableResponse> response = timetableService.getTimetableByDepartment(user.getDepartment().getId());
+        List<TimetableResponse> response = timetableService.getTimetableByDepartmentAndStatuses(
+                user.getDepartment().getId(),
+                List.of(TimetableStatus.PUBLISHED, TimetableStatus.DRAFT));
         return ResponseEntity.ok(ApiResponse.success("Timetable retrieved", response));
     }
 
@@ -195,15 +200,100 @@ public class HODController {
     }
 
     @DeleteMapping("/timetable/{id}")
-    @Operation(summary = "Delete timetable entry", description = "Delete timetable entry")
+    @Operation(summary = "Soft delete timetable entry", description = "Soft delete timetable slot (sets status to DELETED)")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Timetable deleted"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Not found")
     })
-    public ResponseEntity<ApiResponse<Void>> deleteTimetable(@PathVariable UUID id) {
-        timetableService.deleteTimetable(id);
-        return ResponseEntity.ok(ApiResponse.success("Timetable deleted"));
+    public ResponseEntity<ApiResponse<Void>> deleteTimetable(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        User user = getUser(userDetails);
+        timetableService.deleteTimetableSlot(id, user.getId());
+        return ResponseEntity.ok(ApiResponse.success("Timetable slot deleted"));
     }
+
+    @PostMapping("/timetable/ai-suggest")
+    @Operation(summary = "AI timetable suggestion", description = "Generate AI-powered timetable suggestions using Groq LLM")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Suggestions generated"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "AI error or invalid input")
+    })
+    public ResponseEntity<ApiResponse<List<TimetableResponse>>> aiSuggest(
+            @Valid @RequestBody AISuggestRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        User user = getUser(userDetails);
+        List<TimetableResponse> response = timetableService.generateAISuggestion(
+                request, user.getDepartment().getId());
+        return ResponseEntity.ok(ApiResponse.success("AI suggestions generated", response));
+    }
+
+    @PostMapping("/timetable/publish")
+    @Operation(summary = "Publish timetable", description = "Publish timetable slots after final clash check")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Timetable published"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Conflict detected")
+    })
+    public ResponseEntity<ApiResponse<List<TimetableResponse>>> publishTimetable(
+            @Valid @RequestBody List<TimetableRequest> slots,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        User user = getUser(userDetails);
+        List<TimetableResponse> response = timetableService.publishTimetable(
+                slots, user.getDepartment().getId());
+        return ResponseEntity.ok(ApiResponse.success("Timetable published successfully", response));
+    }
+
+    @PutMapping("/timetable/archive")
+    @Operation(summary = "Archive semester timetable", description = "Bulk archive all PUBLISHED slots for a semester")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Timetable archived"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "No slots found")
+    })
+    public ResponseEntity<ApiResponse<Void>> archiveTimetable(
+            @RequestParam String year,
+            @RequestParam int semester,
+            @RequestParam String division,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        User user = getUser(userDetails);
+        timetableService.archiveSemester(user.getDepartment().getId(), year, semester, division);
+        return ResponseEntity.ok(ApiResponse.success("Timetable archived successfully"));
+    }
+
+    @GetMapping("/timetable/archived")
+    @Operation(summary = "List archived timetable", description = "Returns ARCHIVED timetable entries for the HOD's department")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Archived timetable retrieved")
+    })
+    public ResponseEntity<ApiResponse<List<TimetableResponse>>> getArchivedTimetable(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        User user = getUser(userDetails);
+        List<TimetableResponse> response = timetableService.getArchivedByDepartment(user.getDepartment().getId());
+        return ResponseEntity.ok(ApiResponse.success("Archived timetable retrieved", response));
+    }
+
+    @GetMapping("/professors")
+    @Operation(summary = "List professors", description = "List all professors in own college")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Professors retrieved")
+    })
+    public ResponseEntity<ApiResponse<List<UserSearchResponse>>> getProfessors(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        User user = getUser(userDetails);
+        List<UserSearchResponse> professors = userRepository
+                .findByRoleAndCollegeId(com.campusnexus.enums.Role.PROFESSOR, user.getCollege().getId())
+                .stream()
+                .map(p -> UserSearchResponse.builder()
+                        .id(p.getId())
+                        .name(p.getName())
+                        .email(p.getEmail())
+                        .phone(p.getPhone())
+                        .role(p.getRole().name())
+                        .build())
+                .collect(java.util.stream.Collectors.toList());
+        return ResponseEntity.ok(ApiResponse.success("Professors retrieved", professors));
+    }
+
+    // ==================== SEMINAR HALL ENDPOINTS ====================
 
     @PostMapping("/seminar-halls")
     @Operation(summary = "Manage dept seminar halls", description = "Create department seminar hall")

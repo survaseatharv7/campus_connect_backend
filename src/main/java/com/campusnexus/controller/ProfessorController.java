@@ -32,13 +32,14 @@ public class ProfessorController {
     private final EventService eventService;
     private final StudentProgressService progressService;
     private final UserRepository userRepository;
-
     private final EventRegistrationService eventRegistrationService;
+    private final TimetableService timetableService;
 
     public ProfessorController(BatchService batchService, SubmissionService submissionService,
             NotesService notesService, TeacherAvailabilityService availabilityService,
             EventService eventService, StudentProgressService progressService,
-            UserRepository userRepository, EventRegistrationService eventRegistrationService) {
+            UserRepository userRepository, EventRegistrationService eventRegistrationService,
+            TimetableService timetableService) {
         this.batchService = batchService;
         this.submissionService = submissionService;
         this.notesService = notesService;
@@ -47,6 +48,7 @@ public class ProfessorController {
         this.progressService = progressService;
         this.userRepository = userRepository;
         this.eventRegistrationService = eventRegistrationService;
+        this.timetableService = timetableService;
     }
 
     @PostMapping("/batches")
@@ -241,6 +243,26 @@ public class ProfessorController {
     public ResponseEntity<ApiResponse<List<ProgressResponse>>> getProgress(@PathVariable UUID studentId) {
         return ResponseEntity.ok(ApiResponse.success("Progress retrieved",
                 progressService.getProgressByStudent(studentId)));
+    }
+
+    // ==================== TIMETABLE ENDPOINTS ====================
+
+    @GetMapping("/timetable")
+    @Operation(summary = "View own timetable", description = "View professor's own published teaching schedule")
+    public ResponseEntity<ApiResponse<List<TimetableResponse>>> getTimetable(
+            @AuthenticationPrincipal UserDetails ud) {
+        User user = getUser(ud);
+        return ResponseEntity.ok(ApiResponse.success("Timetable retrieved",
+                timetableService.getTimetableForProfessor(user.getId())));
+    }
+
+    @GetMapping("/timetable/merged")
+    @Operation(summary = "View merged schedule", description = "View combined teaching schedule and availability records")
+    public ResponseEntity<ApiResponse<List<TimetableResponse>>> getMergedSchedule(
+            @AuthenticationPrincipal UserDetails ud) {
+        User user = getUser(ud);
+        return ResponseEntity.ok(ApiResponse.success("Merged schedule retrieved",
+                timetableService.getTeacherScheduleMerged(user.getId())));
     }
 
     private User getUser(UserDetails ud) {

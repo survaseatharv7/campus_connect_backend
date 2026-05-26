@@ -144,7 +144,7 @@
 | 104 | src/main/java/com/campusnexus/config/FirebaseConfig.java | Config | ✅ Created | Firebase init |
 | 105 | src/main/java/com/campusnexus/config/StripeConfig.java | Config | ✏️ Modified | Stripe StripeClient bean |
 | 149 | src/main/java/com/campusnexus/config/CorsConfig.java | Config | ✅ Created | Highest-priority CorsFilter bean |
-| 106 | src/main/java/com/campusnexus/config/DataInitializer.java | Config | ✅ Created | Admin seeder |
+| 106 | src/main/java/com/campusnexus/config/DataInitializer.java | Config | ✏️ Modified | Admin seeder & automated database constraints startup migrator |
 | 107 | src/main/java/com/campusnexus/service/AuthService.java | Service | ✅ Created | Auth interface |
 | 108 | src/main/java/com/campusnexus/service/CollegeService.java | Service | ✅ Created | College interface |
 | 109 | src/main/java/com/campusnexus/service/DepartmentService.java | Service | ✅ Created | Department interface |
@@ -185,7 +185,7 @@
 | 144 | src/main/java/com/campusnexus/controller/PrincipalController.java | Controller | ✏️ Modified | Supported status filter in club requests endpoint |
 | 145 | src/main/java/com/campusnexus/controller/HODController.java | Controller | ✏️ Modified | Supported status filter in club requests endpoint |
 | 146 | src/main/java/com/campusnexus/controller/ProfessorController.java | Controller | ✏️ Modified | Professor endpoints + event participant/status |
-| 147 | src/main/java/com/campusnexus/controller/StudentController.java | Controller | ✏️ Modified | Added GET /api/student/sections endpoint |
+| 147 | src/main/java/com/campusnexus/controller/StudentController.java | Controller | ✏️ Modified | Added profile prefill debug logging |
 | 148 | src/main/java/com/campusnexus/controller/WebhookController.java | Controller | ✏️ Modified | Stripe webhook + @CrossOrigin |
 | 148.1 | src/main/java/com/campusnexus/controller/EventController.java | Controller | ✅ Created | Global Event endpoints |
 | 149 | ../campus_connect_frontend/src/api/admin.api.js | API | ✏️ Modified | Admin API client |
@@ -195,6 +195,29 @@
 | 153 | generate_api.py | Script | ✅ Created | Python script to extract endpoints |
 | 154 | api_dump.txt | Data | ✅ Created | Extracted raw DTOs and endpoints |
 | 155 | generate_md.py | Script | ✅ Created | Python script to format Markdown |
+| 156 | src/main/java/com/campusnexus/converter/StringListConverter.java | Converter | ✅ Created | JSON to List converter for profile skills/interests |
+| 157 | src/main/java/com/campusnexus/entity/StudentProfile.java | Entity | ✅ Created | Student profile details entity |
+| 158 | src/main/java/com/campusnexus/repository/StudentProfileRepository.java | Repository | ✅ Created | Student profile queries |
+| 159 | src/main/java/com/campusnexus/dto/UpdateStudentProfileRequest.java | DTO | ✅ Created | Extended profile update request |
+| 160 | src/main/java/com/campusnexus/dto/StudentProfileResponse.java | DTO | ✏️ Modified | Added updatedAt field to DTO |
+| 161 | src/main/java/com/campusnexus/service/StudentProfileService.java | Service | ✅ Created | Profile logic interface |
+| 162 | src/main/java/com/campusnexus/service/impl/StudentProfileServiceImpl.java | ServiceImpl | ✏️ Modified | Mapped updatedAt field |
+| 163 | src/main/java/com/campusnexus/enums/TimetableStatus.java | Enum | ✅ Created | DRAFT, PUBLISHED, ARCHIVED, DELETED |
+| 164 | src/main/java/com/campusnexus/dto/AISuggestRequest.java | DTO | ✅ Created | AI timetable suggestion request with teacher-subject mappings |
+| 165 | src/main/java/com/campusnexus/config/RestTemplateConfig.java | Config | ✅ Created | RestTemplate bean for Groq API calls |
+| 33 | src/main/java/com/campusnexus/entity/Timetable.java | Entity | ✏️ Modified | Added year, semester, division, status, teacherName; mapped startTime/endTime to from_time/to_time columns |
+| 71 | src/main/java/com/campusnexus/dto/TimetableRequest.java | DTO | ✏️ Modified | Replaced with departmentId, teacherId, subject, year, semester, division, dayOfWeek, startTime, endTime |
+| 88 | src/main/java/com/campusnexus/dto/TimetableResponse.java | DTO | ✏️ Modified | Added departmentId, teacherId, year, semester, division, status, hasConflict, conflictReason, type |
+| 50 | src/main/java/com/campusnexus/repository/TimetableRepository.java | Repository | ✏️ Modified | Added status-filtered query methods and clash check by status |
+| 49 | src/main/java/com/campusnexus/repository/TeacherAvailabilityRepository.java | Repository | ✏️ Modified | Added findByTeacher_IdAndStatusIn query |
+| 118 | src/main/java/com/campusnexus/service/TimetableService.java | Service | ✏️ Modified | Added 9 new methods for AI, publish, archive, student/professor views |
+| 134 | src/main/java/com/campusnexus/service/impl/TimetableServiceImpl.java | ServiceImpl | ✏️ Modified | AI Groq integration, status conflict resolution, custom mapping fallback |
+| 145 | src/main/java/com/campusnexus/controller/HODController.java | Controller | ✏️ Modified | Added AI suggest, publish, archive, archived, and professors search endpoints; modified GET/DELETE timetable |
+| 147 | src/main/java/com/campusnexus/controller/StudentController.java | Controller | ✏️ Modified | Timetable endpoint now requires year, semester, division params |
+| 146 | src/main/java/com/campusnexus/controller/ProfessorController.java | Controller | ✏️ Modified | Added GET /timetable and GET /timetable/merged endpoints |
+| 2 | src/main/resources/application.properties | Config | ✏️ Modified | Added Groq AI config properties |
+| 166 | ../campus_connect_fronted/src/api/student.api.js | API | ✏️ Modified | Added profile picture and resume upload APIs |
+| 167 | ../campus_connect_fronted/src/pages/student/ProfilePage.jsx | Page | ✏️ Modified | Fixed profile prefill, form reset, and file upload submit |
 
 ---
 
@@ -216,9 +239,10 @@
 | Broadcast | broadcasts | UUID | ManyToOne: sentBy(User), College, Department | ✅ |
 | Notes | notes | UUID | ManyToOne: uploadedBy(User), Department | ✅ |
 | TeacherAvailability | teacher_availability | UUID | ManyToOne: teacher(User) | ✅ |
-| Timetable | timetables | UUID | ManyToOne: Department, Batch, teacher(User) | ✅ |
+| Timetable | timetables | UUID | ManyToOne: Department, Batch(nullable), teacher(User); Fields: year, semester, division, startTime, endTime, subject, status(TimetableStatus), teacherName | ✏️ Modified |
 | StudentProgress | student_progress | UUID | ManyToOne: student(User), updatedBy(User) | ✅ |
 | InvalidatedToken | invalidated_tokens | UUID | None | ✅ |
+| StudentProfile | student_profiles | UUID | OneToOne: User | ✅ |
 
 ---
 
@@ -271,9 +295,14 @@
 | POST | /api/hod/club-requests/{id}/reject | HODController | HOD | Reject club (HOD) | ✅ |
 | GET | /api/hod/club-requests | HODController | HOD | List club requests with status filter | ✅ |
 | POST | /api/hod/timetable | HODController | HOD | Create timetable | ✅ |
-| GET | /api/hod/timetable | HODController | HOD | List timetable | ✅ |
+| GET | /api/hod/timetable | HODController | HOD | List PUBLISHED+DRAFT timetable | ✏️ Modified |
 | PUT | /api/hod/timetable/{id} | HODController | HOD | Update timetable | ✅ |
-| DELETE | /api/hod/timetable/{id} | HODController | HOD | Delete timetable | ✅ |
+| DELETE | /api/hod/timetable/{id} | HODController | HOD | Soft delete timetable (DELETED status) | ✏️ Modified |
+| POST | /api/hod/timetable/ai-suggest | HODController | HOD | AI timetable suggestion via Groq | ✅ Created |
+| POST | /api/hod/timetable/publish | HODController | HOD | Publish timetable with clash check | ✅ Created |
+| PUT | /api/hod/timetable/archive | HODController | HOD | Archive semester timetable | ✅ Created |
+| GET | /api/hod/timetable/archived | HODController | HOD | List archived timetable | ✅ Created |
+| GET | /api/hod/professors | HODController | HOD | List professors in college | ✅ |
 | POST | /api/hod/seminar-halls | HODController | HOD | Create dept hall | ✅ |
 | GET | /api/hod/seminar-halls | HODController | HOD | List dept halls | ✅ |
 | POST | /api/hod/broadcasts | HODController | HOD | Broadcast dept msg | ✅ |
@@ -312,11 +341,16 @@
 | GET | /api/student/submissions | StudentController | STUDENT | My submissions | ✅ |
 | GET | /api/student/notes | StudentController | STUDENT | Browse notes | ✅ |
 | GET | /api/student/broadcasts | StudentController | STUDENT | View broadcasts | ✅ |
-| GET | /api/student/timetable | StudentController | STUDENT | View timetable | ✅ |
+| GET | /api/student/timetable | StudentController | STUDENT | View timetable (requires year, semester, division params) | ✏️ Modified |
 | GET | /api/student/teacher-availability | StudentController | STUDENT | View availability | ✅ |
 | GET | /api/student/progress | StudentController | STUDENT | View own progress | ✅ |
 | GET | /api/student/sections | StudentController | STUDENT | List relevant sections | ✅ |
-| PUT | /api/student/profile | StudentController | STUDENT | Update profile | ✅ |
+| GET | /api/student/profile | StudentController | STUDENT | Get detailed profile | ✅ |
+| PUT | /api/student/profile | StudentController | STUDENT | Update detailed profile | ✏️ Modified |
+| POST | /api/student/upload/profile-pic | StudentController | STUDENT | Upload profile picture | ✅ Created |
+| POST | /api/student/upload/resume | StudentController | STUDENT | Upload resume | ✅ Created |
+| GET | /api/professor/timetable | ProfessorController | PROFESSOR | View own teaching schedule | ✅ Created |
+| GET | /api/professor/timetable/merged | ProfessorController | PROFESSOR | View merged teaching + availability | ✅ Created |
 | POST | /api/webhook/stripe | WebhookController | Public | Stripe webhook | ✅ |
 
 ---
@@ -340,6 +374,7 @@
 | TicketStatus | PENDING, CONFIRMED, CANCELLED | ✅ |
 | PaymentStatus | PENDING, SUCCESS, FAILED | ✅ |
 | TeacherAvailabilityStatus | AVAILABLE, BUSY, ON_LEAVE | ✅ |
+| TimetableStatus | DRAFT, PUBLISHED, ARCHIVED, DELETED | ✅ |
 
 ---
 
@@ -358,7 +393,7 @@
 | NotesService | NotesServiceImpl | uploadNotes, getNotesByProfessor/Department, updateNotes, deleteNotes | ✅ |
 | BroadcastService | BroadcastServiceImpl | createBroadcast, getBroadcastsBySender, getRelevantBroadcasts | ✅ |
 | SeminarHallService | SeminarHallServiceImpl | createSeminarHall, getPublic/ByCollege/ByDepartment, updateSeminarHall | ✅ |
-| TimetableService | TimetableServiceImpl | createTimetable, getTimetableByDepartment, updateTimetable, deleteTimetable | ✅ |
+| TimetableService | TimetableServiceImpl | createTimetable, getTimetableByDepartment, updateTimetable, deleteTimetable, generateAISuggestion, publishTimetable, archiveSemester, deleteTimetableSlot, getTimetableForStudent, getTimetableForProfessor, getTeacherScheduleMerged, getTimetableByDepartmentAndStatuses, getArchivedByDepartment | ✏️ Modified |
 | TeacherAvailabilityService | TeacherAvailabilityServiceImpl | createAvailability, getByTeacher/Department, updateAvailability, deleteAvailability | ✅ |
 | StudentProgressService | StudentProgressServiceImpl | updateProgress, getProgressByStudent | ✅ |
 | DashboardService | DashboardServiceImpl | getDashboardStats | ✅ |
@@ -366,6 +401,7 @@
 | — | FirebaseStorageService | uploadFile | ✅ |
 | — | FCMService | sendToTopic, sendToToken | ✅ |
 | — | StripeService | createPaymentIntent, handleWebhookEvent | ✅ |
+| StudentProfileService | StudentProfileServiceImpl | getStudentProfile, updateStudentProfile | ✅ |
 
 ---
 
@@ -407,6 +443,9 @@
 | spring.mail.host | smtp.gmail.com | SMTP host |
 | spring.mail.port | 587 | SMTP port |
 | server.port | 8080 | App port |
+| groq.api.key | gsk_your_key_here | Groq API key for AI timetable |
+| groq.api.url | https://api.groq.com/openai/v1/chat/completions | Groq API endpoint |
+| groq.model | llama-3.3-70b-versatile | Groq LLM model |
 
 ---
 
@@ -414,6 +453,55 @@
 
 | Timestamp | Action | File | Details |
 |-----------|--------|------|---------|
+| Step-157 | MODIFY | ../campus_connect_fronted/src/pages/student/ProfilePage.jsx | Fixed profile prefill, form reset, and file upload submit |
+| Step-156 | MODIFY | ../campus_connect_fronted/src/api/student.api.js | Added profile picture and resume upload APIs |
+| Step-155 | MODIFY | src/main/java/com/campusnexus/controller/StudentController.java | Added print statements for Fetching student profile and Authenticated user to getProfile method |
+| Step-154 | MODIFY | src/main/java/com/campusnexus/service/impl/StudentProfileServiceImpl.java | Mapped the updatedAt field from the StudentProfile entity to the StudentProfileResponse DTO in both retrieval and update operations |
+| Step-153 | MODIFY | src/main/java/com/campusnexus/dto/StudentProfileResponse.java | Added updatedAt field to StudentProfileResponse DTO to send profile update timestamp to the frontend |
+| Step-152 | MODIFY | ../campus_connect_fronted/src/pages/student/TimetablePage.jsx | Added console logs for fetching, response, and mapped timetable |
+| Step-151 | MODIFY | ../campus_connect_fronted/src/pages/hod/TimetablePage.jsx | Filter slots in CurrentTimetableTab and mapped fromTime/toTime in ManualAddModal |
+| Step-150 | MODIFY | ../campus_connect_fronted/src/components/shared/TimetableGrid.jsx | Improved cell matching logic to support time/day normalizations |
+| Step-149 | MODIFY | src/main/java/com/campusnexus/controller/StudentController.java | Added endpoint debug logging to timetable endpoint |
+| Step-148 | MODIFY | src/main/java/com/campusnexus/service/impl/TimetableServiceImpl.java | Applied year/day normalizations and student timetable debug logs |
+| Step-147 | MODIFY | src/main/java/com/campusnexus/dto/TimetableResponse.java | Added getFromTime/getToTime getters for backwards compatibility |
+| Step-146 | MODIFY | src/main/java/com/campusnexus/dto/TimetableRequest.java | Added JsonAlias for startTime/fromTime and endTime/toTime compatibility |
+| Step-145 | MODIFY | PROJECT_CONTEXT.md | Updated registries and change log for database constraint corrections |
+| Step-144 | MODIFY | DataInitializer.java | Dropped NOT NULL constraints on from_time, to_time, start_time, and end_time columns at startup |
+| Step-143 | MODIFY | PROJECT_CONTEXT.md | Updated registries and change log for automated constraint startup fix |
+| Step-142 | MODIFY | DataInitializer.java | Added schema fix to drop NOT NULL constraint on timetables.batch_id during startup |
+| Step-141 | MODIFY | PROJECT_CONTEXT.md | Updated registries and change log for timetable column mapping |
+| Step-140 | MODIFY | Timetable.java | Mapped startTime/endTime to existing from_time/to_time columns to avoid SQL constraint violations |
+| Step-139 | MODIFY | PROJECT_CONTEXT.md | Updated registries and change log for timetable publish fixes |
+| Step-138 | MODIFY | TimetableServiceImpl.java / TimetableRepository.java | Fixed publish flow payload, validation, and clash check by status |
+| Step-137 | MODIFY | PROJECT_CONTEXT.md | Updated registries and change log for HOD professors endpoint |
+| Step-136 | MODIFY | HODController.java | Added GET /api/hod/professors endpoint |
+| Step-135 | MODIFY | PROJECT_CONTEXT.md | Updated all registries for Timetable AI module |
+| Step-134 | MODIFY | application.properties | Added groq.api.key, groq.api.url, groq.model properties |
+| Step-133 | MODIFY | ProfessorController.java | Added TimetableService injection, GET /timetable and GET /timetable/merged endpoints |
+| Step-132 | MODIFY | StudentController.java | Updated GET /timetable to require year, semester, division params |
+| Step-131 | MODIFY | HODController.java | Added ai-suggest, publish, archive, archived endpoints; modified GET/DELETE timetable |
+| Step-130 | MODIFY | TimetableServiceImpl.java | Full rewrite with Groq AI integration, conflict detection, all new timetable methods |
+| Step-129 | MODIFY | TimetableService.java | Added 9 new method signatures to interface |
+| Step-128 | MODIFY | TeacherAvailabilityRepository.java | Added findByTeacher_IdAndStatusIn query method |
+| Step-127 | MODIFY | TimetableRepository.java | Added 5 new status-filtered query methods |
+| Step-126 | CREATE | RestTemplateConfig.java | RestTemplate bean for Groq HTTP calls |
+| Step-125 | CREATE | AISuggestRequest.java | AI suggestion DTO with TeacherSubjectMapping inner class |
+| Step-124 | MODIFY | TimetableResponse.java | Added departmentId, teacherId, status, hasConflict, conflictReason, type fields |
+| Step-123 | MODIFY | TimetableRequest.java | Replaced with departmentId, teacherId, year, semester, division, startTime, endTime |
+| Step-122 | MODIFY | Timetable.java | Added year, semester, division, status, teacherName; changed to startTime/endTime strings |
+| Step-121 | CREATE | TimetableStatus.java | New enum: DRAFT, PUBLISHED, ARCHIVED, DELETED |
+| Step-120 | MODIFY | StudentController.java | Added profile picture and resume upload endpoints |
+| Step-119 | MODIFY | StudentController.java | Added profile picture and resume upload endpoints to Firebase |
+| Step-118 | MODIFY | StudentProfileServiceImpl.java | Fixed profile synchronization issues (merged User/Profile fields properly) |
+| Step-117 | MODIFY | StudentProfileServiceImpl.java | Fixed response mapping to ensure User fields (name, phone) are always returned |
+| Step-116 | MODIFY | StudentController.java | Added GET profile and updated PUT profile to use StudentProfileService |
+| Step-115 | CREATE | StudentProfileServiceImpl.java | Implemented profile CRUD logic |
+| Step-114 | CREATE | StudentProfileService.java | Added service interface for profile management |
+| Step-113 | CREATE | StudentProfileResponse.java | Added DTO for consolidated profile response |
+| Step-112 | CREATE | UpdateStudentProfileRequest.java | Added DTO for extended profile updates |
+| Step-111 | CREATE | StudentProfileRepository.java | Added repository with findByUserId |
+| Step-110 | CREATE | StudentProfile.java | Added student details entity with OneToOne relationship to User |
+| Step-109 | CREATE | StringListConverter.java | Added JSON converter for List<String> fields |
 | Step-108 | MODIFY | EventServiceImpl.java | Applied global sorting logic and updated repository calls |
 | Step-107 | MODIFY | EventRepository.java | Added OrderByStartDateTimeDesc to all event finder methods |
 | Step-106 | MODIFY | ProfessorController.java | Added deleteAvailability endpoint |
@@ -562,14 +650,19 @@
 - Create database: `CREATE DATABASE campus_nexus;`
 - Update datasource username/password in application.properties
 
+### Groq AI Setup Required
+- Replace `groq.api.key` with your Groq API key (get from https://console.groq.com)
+- Default model: `llama-3.3-70b-versatile` (can be changed in application.properties)
+- Used for AI-powered timetable generation via POST /api/hod/timetable/ai-suggest
+
 ---
 
 ## Final Summary
-- Total Files Created: 155
-- Total Entities: 17
-- Total Endpoints: 93
-- Total Enums: 15
-- Total Services: 19 (16 interfaces + 3 standalone)
+- Total Files Created: 165
+- Total Entities: 18
+- Total Endpoints: 102
+- Total Enums: 16
+- Total Services: 20 (17 interfaces + 3 standalone)
 - Build Command: mvn clean install
 - Run Command: mvn spring-boot:run
 - Swagger URL: http://localhost:8080/swagger-ui.html

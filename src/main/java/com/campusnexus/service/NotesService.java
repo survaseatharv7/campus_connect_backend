@@ -11,4 +11,5 @@ public interface NotesService {
     List<NotesResponse> getNotesByDepartment(UUID departmentId, Integer year, String subject);
     NotesResponse updateNotes(UUID noteId, NotesUploadRequest request, UUID professorId);
     void deleteNotes(UUID noteId, UUID professorId);
+    List<NotesResponse> getNotesByYearSemesterDivision(Integer year, Integer semester, String division, UUID departmentId);
 }

@@ -3,9 +3,9 @@ package com.campusnexus.controller;
 import com.campusnexus.dto.*;
 import com.campusnexus.entity.User;
 import com.campusnexus.exception.ResourceNotFoundException;
+import com.campusnexus.repository.StudentProfileRepository;
 import com.campusnexus.repository.UserRepository;
 import com.campusnexus.service.*;
-import com.campusnexus.service.impl.FirebaseStorageService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -38,7 +38,8 @@ public class StudentController {
         private final StudentProgressService progressService;
         private final BatchService batchService;
         private final StudentProfileService profileService;
-        private final FirebaseStorageService firebaseStorageService;
+        private final CloudinaryService cloudinaryService;
+        private final StudentProfileRepository studentProfileRepository;
         private final UserRepository userRepository;
 
         public StudentController(EventService eventService, EventRegistrationService registrationService,
@@ -47,7 +48,8 @@ public class StudentController {
                         TimetableService timetableService, TeacherAvailabilityService availabilityService,
                         StudentProgressService progressService, BatchService batchService,
                         StudentProfileService profileService,
-                        FirebaseStorageService firebaseStorageService,
+                        CloudinaryService cloudinaryService,
+                        StudentProfileRepository studentProfileRepository,
                         UserRepository userRepository) {
                 this.eventService = eventService;
                 this.registrationService = registrationService;
@@ -60,7 +62,8 @@ public class StudentController {
                 this.progressService = progressService;
                 this.batchService = batchService;
                 this.profileService = profileService;
-                this.firebaseStorageService = firebaseStorageService;
+                this.cloudinaryService = cloudinaryService;
+                this.studentProfileRepository = studentProfileRepository;
                 this.userRepository = userRepository;
         }
 
@@ -151,13 +154,26 @@ public class StudentController {
         @GetMapping("/notes")
         @Operation(summary = "Browse notes")
         public ResponseEntity<ApiResponse<List<NotesResponse>>> getNotes(
-                        @AuthenticationPrincipal UserDetails ud,
-                        @RequestParam(required = false) Integer year,
-                        @RequestParam(required = false) String subject) {
+                        @AuthenticationPrincipal UserDetails ud) {
                 User user = getUser(ud);
                 UUID deptId = user.getDepartment() != null ? user.getDepartment().getId() : null;
+
+                java.util.Optional<com.campusnexus.entity.StudentProfile> profileOpt = studentProfileRepository.findByUserId(user.getId());
+                if (profileOpt.isPresent()) {
+                        com.campusnexus.entity.StudentProfile profile = profileOpt.get();
+                        if (profile.getYear() != null && profile.getSemester() != null) {
+                                List<NotesResponse> notes = notesService.getNotesByYearSemesterDivision(
+                                                profile.getYear(),
+                                                profile.getSemester(),
+                                                profile.getDivision(),
+                                                deptId
+                                );
+                                return ResponseEntity.ok(ApiResponse.success("Notes retrieved", notes));
+                        }
+                }
+
                 return ResponseEntity.ok(ApiResponse.success("Notes retrieved",
-                                notesService.getNotesByDepartment(deptId, year, subject)));
+                                notesService.getNotesByDepartment(deptId, null, null)));
         }
 
         @GetMapping("/broadcasts")
@@ -174,19 +190,39 @@ public class StudentController {
         @GetMapping("/timetable")
         @Operation(summary = "View timetable", description = "View published timetable for specific year, semester, and division")
         public ResponseEntity<ApiResponse<List<TimetableResponse>>> getTimetable(
-                        @RequestParam String year,
-                        @RequestParam int semester,
-                        @RequestParam String division,
+                        @RequestParam(required = false) String year,
+                        @RequestParam(required = false) Integer semester,
+                        @RequestParam(required = false) String division,
                         @AuthenticationPrincipal UserDetails ud) {
                 System.out.println("Student timetable endpoint called");
-                System.out.println("Year: " + year);
-                System.out.println("Semester: " + semester);
-                System.out.println("Division: " + division);
                 User user = getUser(ud);
                 UUID deptId = user.getDepartment() != null ? user.getDepartment().getId() : null;
-                System.out.println("Student Department ID: " + deptId);
-                List<TimetableResponse> timetable = timetableService.getTimetableForStudent(deptId, year, semester, division);
-                System.out.println("Fetched student timetable count: " + (timetable != null ? timetable.size() : 0));
+
+                String targetYear = year;
+                Integer targetSemester = semester;
+                String targetDivision = division;
+
+                if (targetYear == null || targetSemester == null || targetDivision == null) {
+                        java.util.Optional<com.campusnexus.entity.StudentProfile> profileOpt = studentProfileRepository.findByUserId(user.getId());
+                        if (profileOpt.isPresent()) {
+                                com.campusnexus.entity.StudentProfile profile = profileOpt.get();
+                                if (targetYear == null && profile.getYear() != null) {
+                                        targetYear = String.valueOf(profile.getYear());
+                                }
+                                if (targetSemester == null && profile.getSemester() != null) {
+                                        targetSemester = profile.getSemester();
+                                }
+                                if (targetDivision == null && profile.getDivision() != null) {
+                                        targetDivision = profile.getDivision();
+                                }
+                        }
+                }
+
+                if (targetYear == null || targetSemester == null || targetDivision == null) {
+                        return ResponseEntity.ok(ApiResponse.success("Timetable retrieved", List.of()));
+                }
+
+                List<TimetableResponse> timetable = timetableService.getTimetableForStudent(deptId, targetYear, targetSemester, targetDivision);
                 return ResponseEntity.ok(ApiResponse.success("Timetable retrieved", timetable));
         }
 
@@ -268,8 +304,12 @@ public class StudentController {
                         throw new com.campusnexus.exception.BadRequestException("Only JPG and PNG images are allowed");
                 }
 
-                String userId = getUser(ud).getId().toString();
-                String url = firebaseStorageService.uploadFile(file, "profile-images/" + userId);
+                String url = cloudinaryService.uploadFile(file, "campusnexus/profiles", "image");
+
+                User user = getUser(ud);
+                user.setProfilePicUrl(url);
+                userRepository.save(user);
+
                 return ResponseEntity.ok(ApiResponse.success("Profile picture uploaded", java.util.Map.of("url", url)));
         }
 
@@ -284,8 +324,14 @@ public class StudentController {
                         throw new com.campusnexus.exception.BadRequestException("Only PDF files are allowed");
                 }
 
-                String userId = getUser(ud).getId().toString();
-                String url = firebaseStorageService.uploadFile(file, "resumes/" + userId);
+                String url = cloudinaryService.uploadFile(file, "campusnexus/resumes", "raw");
+
+                User user = getUser(ud);
+                com.campusnexus.entity.StudentProfile profile = studentProfileRepository.findByUserId(user.getId())
+                                .orElseGet(() -> com.campusnexus.entity.StudentProfile.builder().user(user).build());
+                profile.setResumeUrl(url);
+                studentProfileRepository.save(profile);
+
                 return ResponseEntity.ok(ApiResponse.success("Resume uploaded", java.util.Map.of("url", url)));
         }
 

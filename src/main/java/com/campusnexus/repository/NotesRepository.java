@@ -13,4 +13,12 @@ public interface NotesRepository extends JpaRepository<Notes, UUID> {
     List<Notes> findByDepartmentId(UUID departmentId);
     List<Notes> findByDepartmentIdAndYearAndSemester(UUID departmentId, Integer year, Integer semester);
     List<Notes> findByDepartmentIdAndSubject(UUID departmentId, String subject);
+
+    @org.springframework.data.jpa.repository.Query("SELECT n FROM Notes n WHERE n.department.id = :departmentId AND n.year = :year AND n.semester = :semester AND (n.division IS NULL OR n.division = :division)")
+    List<Notes> findRelevantNotes(
+            @org.springframework.data.repository.query.Param("departmentId") UUID departmentId,
+            @org.springframework.data.repository.query.Param("year") Integer year,
+            @org.springframework.data.repository.query.Param("semester") Integer semester,
+            @org.springframework.data.repository.query.Param("division") String division
+    );
 }

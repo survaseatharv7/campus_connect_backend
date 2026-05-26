@@ -32,11 +32,11 @@ public class Notes {
     @Column(nullable = false)
     private String subject;
 
-    @Column(nullable = false)
     private Integer year;
 
-    @Column(nullable = false)
     private Integer semester;
+
+    private String division;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id", nullable = false)

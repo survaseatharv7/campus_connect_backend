@@ -35,8 +35,15 @@ public class DataInitializer implements ApplicationRunner {
             jdbcTemplate.execute("ALTER TABLE timetables ALTER COLUMN start_time DROP NOT NULL");
             jdbcTemplate.execute("ALTER TABLE timetables ALTER COLUMN end_time DROP NOT NULL");
             logger.info("Successfully dropped NOT NULL constraints on timetables columns");
+            
+            // Migrate student years to numeric format
+            jdbcTemplate.execute("UPDATE timetables SET year = '1' WHERE year = 'FE'");
+            jdbcTemplate.execute("UPDATE timetables SET year = '2' WHERE year = 'SE'");
+            jdbcTemplate.execute("UPDATE timetables SET year = '3' WHERE year = 'TE'");
+            jdbcTemplate.execute("UPDATE timetables SET year = '4' WHERE year = 'BE'");
+            logger.info("Successfully migrated year codes to numbers on timetables table");
         } catch (Exception e) {
-            logger.warn("Could not alter timetables constraints (columns may already be nullable or table not created yet): " + e.getMessage());
+            logger.warn("Could not execute startup migrations / alter constraints: " + e.getMessage());
         }
 
         String adminEmail = "admin@campusnexus.com";

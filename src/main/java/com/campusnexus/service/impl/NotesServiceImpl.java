@@ -37,6 +37,7 @@ public class NotesServiceImpl implements NotesService {
                 .subject(request.getSubject())
                 .year(request.getYear())
                 .semester(request.getSemester())
+                .division(request.getDivision())
                 .department(professor.getDepartment())
                 .uploadedBy(professor)
                 .build();
@@ -85,6 +86,7 @@ public class NotesServiceImpl implements NotesService {
         notes.setSubject(request.getSubject());
         notes.setYear(request.getYear());
         notes.setSemester(request.getSemester());
+        notes.setDivision(request.getDivision());
 
         notes = notesRepository.save(notes);
         return mapToResponse(notes);
@@ -103,7 +105,18 @@ public class NotesServiceImpl implements NotesService {
         notesRepository.delete(notes);
     }
 
+    @Override
+    public List<NotesResponse> getNotesByYearSemesterDivision(Integer year, Integer semester, String division, UUID departmentId) {
+        return notesRepository.findRelevantNotes(departmentId, year, semester, division).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
     private NotesResponse mapToResponse(Notes notes) {
+        String yearLabel = null;
+        if (notes.getYear() != null) {
+            yearLabel = String.valueOf(notes.getYear());
+        }
         return NotesResponse.builder()
                 .id(notes.getId())
                 .title(notes.getTitle())
@@ -112,6 +125,8 @@ public class NotesServiceImpl implements NotesService {
                 .subject(notes.getSubject())
                 .year(notes.getYear())
                 .semester(notes.getSemester())
+                .division(notes.getDivision())
+                .yearLabel(yearLabel)
                 .uploaderName(notes.getUploadedBy().getName())
                 .departmentName(notes.getDepartment().getName())
                 .uploadedAt(notes.getUploadedAt())

@@ -22,6 +22,8 @@ import java.util.stream.Collectors;
 @Service
 public class TimetableServiceImpl implements TimetableService {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(TimetableServiceImpl.class);
+
     private final TimetableRepository timetableRepository;
     private final DepartmentRepository departmentRepository;
     private final BatchRepository batchRepository;
@@ -393,18 +395,11 @@ public class TimetableServiceImpl implements TimetableService {
     @Override
     public List<TimetableResponse> getTimetableForStudent(UUID departmentId, String year, int semester, String division) {
         String normalizedYear = normalizeYear(year);
-        System.out.println("Fetching timetable:");
-        System.out.println("Department: " + departmentId);
-        System.out.println("Year: " + year + " (Normalized: " + normalizedYear + ")");
-        System.out.println("Semester: " + semester);
-        System.out.println("Division: " + division);
+        log.info("Fetching timetable for year={}, sem={}, div={}, deptId={}", normalizedYear, semester, division, departmentId);
 
-        List<Timetable> result = timetableRepository
-                .findByDepartment_IdAndYearAndSemesterAndDivisionAndStatus(
-                        departmentId, normalizedYear, semester, division, TimetableStatus.PUBLISHED);
+        List<Timetable> result = timetableRepository.findPublishedForStudent(departmentId, normalizedYear, semester, division);
 
-        System.out.println("Fetched timetable size: " + result.size());
-        result.forEach(System.out::println);
+        log.info("Fetched student timetable count: {}", result.size());
 
         return result.stream()
                 .map(this::mapToResponse)
@@ -478,16 +473,16 @@ public class TimetableServiceImpl implements TimetableService {
         switch (year.trim().toUpperCase()) {
             case "1":
             case "FE":
-                return "FE";
+                return "1";
             case "2":
             case "SE":
-                return "SE";
+                return "2";
             case "3":
             case "TE":
-                return "TE";
+                return "3";
             case "4":
             case "BE":
-                return "BE";
+                return "4";
             default:
                 return year.trim().toUpperCase();
         }

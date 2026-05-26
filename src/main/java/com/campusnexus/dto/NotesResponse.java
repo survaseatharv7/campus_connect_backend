@@ -20,6 +20,8 @@ public class NotesResponse {
     private String subject;
     private Integer year;
     private Integer semester;
+    private String division;
+    private String yearLabel;
     private String uploaderName;
     private String departmentName;
     private LocalDateTime uploadedAt;

@@ -36,7 +36,7 @@
 
 | # | File Path | Type | Status | Description |
 |---|-----------|------|--------|-------------|
-| 1 | pom.xml | Config | ✅ Created | Maven build config with all dependencies |
+| 1 | pom.xml | Config | ✏️ Modified | Maven build config with all dependencies, added Cloudinary |
 | 2 | src/main/resources/application.properties | Config | ✏️ Modified | All config properties + ngrok/CORS props |
 | 3 | src/main/java/com/campusnexus/CampusNexusApplication.java | Main | ✅ Created | Spring Boot main class |
 | 4 | src/main/java/com/campusnexus/enums/Role.java | Enum | ✅ Created | CAMPUS_ADMIN, PRINCIPAL, HOD, PROFESSOR, STUDENT |
@@ -66,7 +66,7 @@
 | 28 | src/main/java/com/campusnexus/entity/SeminarHall.java | Entity | ✅ Created | Seminar hall with type/capacity |
 | 29 | src/main/java/com/campusnexus/entity/SeminarHallBooking.java | Entity | ✅ Created | Hall booking with time range |
 | 30 | src/main/java/com/campusnexus/entity/Broadcast.java | Entity | ✅ Created | Multi-level broadcast messages |
-| 31 | src/main/java/com/campusnexus/entity/Notes.java | Entity | ✅ Created | Professor notes uploads |
+| 31 | src/main/java/com/campusnexus/entity/Notes.java | Entity | ✏️ Modified | Professor notes uploads with nullable year/sem and new division |
 | 32 | src/main/java/com/campusnexus/entity/TeacherAvailability.java | Entity | ✅ Created | Teacher availability slots |
 | 33 | src/main/java/com/campusnexus/entity/Timetable.java | Entity | ✅ Created | Department timetable |
 | 34 | src/main/java/com/campusnexus/entity/StudentProgress.java | Entity | ✅ Created | Student academic progress |
@@ -83,9 +83,9 @@
 | 45 | src/main/java/com/campusnexus/repository/SeminarHallRepository.java | Repository | ✅ Created | SeminarHall queries |
 | 46 | src/main/java/com/campusnexus/repository/SeminarHallBookingRepository.java | Repository | ✅ Created | Booking queries |
 | 47 | src/main/java/com/campusnexus/repository/BroadcastRepository.java | Repository | ✅ Created | Broadcast queries with JPQL |
-| 48 | src/main/java/com/campusnexus/repository/NotesRepository.java | Repository | ✅ Created | Notes queries |
+| 48 | src/main/java/com/campusnexus/repository/NotesRepository.java | Repository | ✏️ Modified | Notes queries with division filters |
 | 49 | src/main/java/com/campusnexus/repository/TeacherAvailabilityRepository.java | Repository | ✅ Created | Availability queries |
-| 50 | src/main/java/com/campusnexus/repository/TimetableRepository.java | Repository | ✅ Created | Timetable queries |
+| 50 | src/main/java/com/campusnexus/repository/TimetableRepository.java | Repository | ✏️ Modified | Timetable queries with findPublishedForStudent method |
 | 51 | src/main/java/com/campusnexus/repository/StudentProgressRepository.java | Repository | ✅ Created | Progress queries |
 | 52 | src/main/java/com/campusnexus/repository/InvalidatedTokenRepository.java | Repository | ✅ Created | Token blocklist check |
 | 53 | src/main/java/com/campusnexus/dto/LoginRequest.java | DTO | ✅ Created | Login DTO |
@@ -103,7 +103,7 @@
 | 64 | src/main/java/com/campusnexus/dto/BatchSectionCreateRequest.java | DTO | ✏️ Modified | Added deadline and isActive fields |
 | 65 | src/main/java/com/campusnexus/dto/SubmissionRequest.java | DTO | ✅ Created | Submission creation |
 | 66 | src/main/java/com/campusnexus/dto/SubmissionRemarkRequest.java | DTO | ✅ Created | Professor remark |
-| 67 | src/main/java/com/campusnexus/dto/NotesUploadRequest.java | DTO | ✅ Created | Notes upload |
+| 67 | src/main/java/com/campusnexus/dto/NotesUploadRequest.java | DTO | ✏️ Modified | Notes upload request with optional division |
 | 68 | src/main/java/com/campusnexus/dto/BroadcastRequest.java | DTO | ✅ Created | Broadcast creation |
 | 69 | src/main/java/com/campusnexus/dto/SeminarHallRequest.java | DTO | ✅ Created | Hall creation |
 | 70 | src/main/java/com/campusnexus/dto/SeminarHallBookingRequest.java | DTO | ✅ Created | Hall booking |
@@ -122,7 +122,7 @@
 | 82 | src/main/java/com/campusnexus/dto/BatchResponse.java | DTO | ✅ Created | Batch response |
 | 83 | src/main/java/com/campusnexus/dto/SectionResponse.java | DTO | ✏️ Modified | Added batchName and teacherName |
 | 84 | src/main/java/com/campusnexus/dto/SubmissionResponse.java | DTO | ✏️ Modified | Added teamMemberNames and teamSize fields |
-| 85 | src/main/java/com/campusnexus/dto/NotesResponse.java | DTO | ✅ Created | Notes response |
+| 85 | src/main/java/com/campusnexus/dto/NotesResponse.java | DTO | ✏️ Modified | Notes response with division and yearLabel |
 | 86 | src/main/java/com/campusnexus/dto/BroadcastResponse.java | DTO | ✏️ Modified | Added senderRole field |
 | 87 | src/main/java/com/campusnexus/dto/SeminarHallResponse.java | DTO | ✅ Created | Hall response |
 | 88 | src/main/java/com/campusnexus/dto/TimetableResponse.java | DTO | ✅ Created | Timetable response |
@@ -139,7 +139,7 @@
 | 99 | src/main/java/com/campusnexus/security/JwtAuthFilter.java | Security | ✅ Created | JWT filter with blocklist |
 | 100 | src/main/java/com/campusnexus/security/UserDetailsServiceImpl.java | Security | ✅ Created | UserDetails from DB |
 | 101 | src/main/java/com/campusnexus/security/JwtAuthEntryPoint.java | Security | ✅ Created | Auth entry point |
-| 102 | src/main/java/com/campusnexus/config/SecurityConfig.java | Config | ✏️ Modified | Spring Security 7 config + CORS fix |
+| 102 | src/main/java/com/campusnexus/config/SecurityConfig.java | Config | ✏️ Modified | Spring Security 7 config + CORS fix, secured upload paths |
 | 103 | src/main/java/com/campusnexus/config/SwaggerConfig.java | Config | ✏️ Modified | OpenAPI/Swagger config + ngrok servers |
 | 104 | src/main/java/com/campusnexus/config/FirebaseConfig.java | Config | ✅ Created | Firebase init |
 | 105 | src/main/java/com/campusnexus/config/StripeConfig.java | Config | ✏️ Modified | Stripe StripeClient bean |
@@ -153,7 +153,7 @@
 | 112 | src/main/java/com/campusnexus/service/ClubService.java | Service | ✏️ Modified | Added status filtering to getClubRequests for HOD/Principal |
 | 113 | src/main/java/com/campusnexus/service/BatchService.java | Service | ✏️ Modified | Added getSectionsForStudent |
 | 114 | src/main/java/com/campusnexus/service/SubmissionService.java | Service | ✅ Created | Submission interface |
-| 115 | src/main/java/com/campusnexus/service/NotesService.java | Service | ✅ Created | Notes interface |
+| 115 | src/main/java/com/campusnexus/service/NotesService.java | Service | ✏️ Modified | Notes interface |
 | 116 | src/main/java/com/campusnexus/service/BroadcastService.java | Service | ✅ Created | Broadcast interface |
 | 117 | src/main/java/com/campusnexus/service/SeminarHallService.java | Service | ✅ Created | SeminarHall interface |
 | 118 | src/main/java/com/campusnexus/service/TimetableService.java | Service | ✅ Created | Timetable interface |
@@ -169,10 +169,10 @@
 | 128 | src/main/java/com/campusnexus/service/impl/ClubServiceImpl.java | ServiceImpl | ✏️ Modified | Implemented status filtering logic for club requests |
 | 129 | src/main/java/com/campusnexus/service/impl/BatchServiceImpl.java | ServiceImpl | ✏️ Modified | Implemented filtering in getSectionsForStudent for pending tasks |
 | 130 | src/main/java/com/campusnexus/service/impl/SubmissionServiceImpl.java | ServiceImpl | ✏️ Modified | Updated mapping logic to include teamMemberNames and teamSize |
-| 131 | src/main/java/com/campusnexus/service/impl/NotesServiceImpl.java | ServiceImpl | ✅ Created | Notes CRUD |
+| 131 | src/main/java/com/campusnexus/service/impl/NotesServiceImpl.java | ServiceImpl | ✏️ Modified | Notes CRUD with division and numeric yearLabel formatting |
 | 132 | src/main/java/com/campusnexus/service/impl/BroadcastServiceImpl.java | ServiceImpl | ✏️ Modified | Handled senderRole and Campus Admin display |
 | 133 | src/main/java/com/campusnexus/service/impl/SeminarHallServiceImpl.java | ServiceImpl | ✅ Created | Seminar hall CRUD |
-| 134 | src/main/java/com/campusnexus/service/impl/TimetableServiceImpl.java | ServiceImpl | ✅ Created | Timetable CRUD |
+| 134 | src/main/java/com/campusnexus/service/impl/TimetableServiceImpl.java | ServiceImpl | ✏️ Modified | Timetable CRUD with customized getTimetableForStudent method |
 | 135 | src/main/java/com/campusnexus/service/impl/TeacherAvailabilityServiceImpl.java | ServiceImpl | ✅ Created | Availability CRUD |
 | 136 | src/main/java/com/campusnexus/service/impl/StudentProgressServiceImpl.java | ServiceImpl | ✅ Created | Progress tracking |
 | 137 | src/main/java/com/campusnexus/service/impl/DashboardServiceImpl.java | ServiceImpl | ✅ Created | Dashboard stats |
@@ -185,7 +185,7 @@
 | 144 | src/main/java/com/campusnexus/controller/PrincipalController.java | Controller | ✏️ Modified | Supported status filter in club requests endpoint |
 | 145 | src/main/java/com/campusnexus/controller/HODController.java | Controller | ✏️ Modified | Supported status filter in club requests endpoint |
 | 146 | src/main/java/com/campusnexus/controller/ProfessorController.java | Controller | ✏️ Modified | Professor endpoints + event participant/status |
-| 147 | src/main/java/com/campusnexus/controller/StudentController.java | Controller | ✏️ Modified | Added profile prefill debug logging |
+| 147 | src/main/java/com/campusnexus/controller/StudentController.java | Controller | ✏️ Modified | Modified uploads, GET /notes to filter by student profile, and GET /timetable to support profile fallback |
 | 148 | src/main/java/com/campusnexus/controller/WebhookController.java | Controller | ✏️ Modified | Stripe webhook + @CrossOrigin |
 | 148.1 | src/main/java/com/campusnexus/controller/EventController.java | Controller | ✅ Created | Global Event endpoints |
 | 149 | ../campus_connect_frontend/src/api/admin.api.js | API | ✏️ Modified | Admin API client |
@@ -218,6 +218,12 @@
 | 2 | src/main/resources/application.properties | Config | ✏️ Modified | Added Groq AI config properties |
 | 166 | ../campus_connect_fronted/src/api/student.api.js | API | ✏️ Modified | Added profile picture and resume upload APIs |
 | 167 | ../campus_connect_fronted/src/pages/student/ProfilePage.jsx | Page | ✏️ Modified | Fixed profile prefill, form reset, and file upload submit |
+| 168 | src/main/java/com/campusnexus/config/CloudinaryConfig.java | Config | ✅ Created | Configuration for Cloudinary client bean |
+| 169 | src/main/java/com/campusnexus/service/CloudinaryService.java | Service | ✅ Created | Cloudinary media upload service interface |
+| 170 | src/main/java/com/campusnexus/service/impl/CloudinaryServiceImpl.java | ServiceImpl | ✏️ Modified | Cloudinary media upload service implementation |
+| 171 | src/main/java/com/campusnexus/controller/UploadController.java | Controller | ✏️ Modified | Generic file upload controller |
+| 172 | ../campus_connect_fronted/src/utils/constants.js | Config | ✏️ Modified | Updated YEAR_LABELS mapping to return numeric format |
+| 173 | ../campus_connect_fronted/src/pages/professor/NotesPage.jsx | Page | ✏️ Modified | Updated year selection dropdown option labels to Year 1-4 |
 
 ---
 
@@ -237,7 +243,7 @@
 | SeminarHall | seminar_halls | UUID | ManyToOne: College, Department | ✅ |
 | SeminarHallBooking | seminar_hall_bookings | UUID | ManyToOne: SeminarHall, bookedBy(User) | ✅ |
 | Broadcast | broadcasts | UUID | ManyToOne: sentBy(User), College, Department | ✅ |
-| Notes | notes | UUID | ManyToOne: uploadedBy(User), Department | ✅ |
+| Notes | notes | UUID | ManyToOne: uploadedBy(User), Department; Fields: year(nullable), semester(nullable), division | ✏️ Modified |
 | TeacherAvailability | teacher_availability | UUID | ManyToOne: teacher(User) | ✅ |
 | Timetable | timetables | UUID | ManyToOne: Department, Batch(nullable), teacher(User); Fields: year, semester, division, startTime, endTime, subject, status(TimetableStatus), teacherName | ✏️ Modified |
 | StudentProgress | student_progress | UUID | ManyToOne: student(User), updatedBy(User) | ✅ |
@@ -341,7 +347,7 @@
 | GET | /api/student/submissions | StudentController | STUDENT | My submissions | ✅ |
 | GET | /api/student/notes | StudentController | STUDENT | Browse notes | ✅ |
 | GET | /api/student/broadcasts | StudentController | STUDENT | View broadcasts | ✅ |
-| GET | /api/student/timetable | StudentController | STUDENT | View timetable (requires year, semester, division params) | ✏️ Modified |
+| GET | /api/student/timetable | StudentController | STUDENT | View timetable (optional parameters with profile fallback) | ✏️ Modified |
 | GET | /api/student/teacher-availability | StudentController | STUDENT | View availability | ✅ |
 | GET | /api/student/progress | StudentController | STUDENT | View own progress | ✅ |
 | GET | /api/student/sections | StudentController | STUDENT | List relevant sections | ✅ |
@@ -352,6 +358,12 @@
 | GET | /api/professor/timetable | ProfessorController | PROFESSOR | View own teaching schedule | ✅ Created |
 | GET | /api/professor/timetable/merged | ProfessorController | PROFESSOR | View merged teaching + availability | ✅ Created |
 | POST | /api/webhook/stripe | WebhookController | Public | Stripe webhook | ✅ |
+| POST | /api/upload/image | UploadController | Authenticated | Upload general image | ✅ Created |
+| POST | /api/upload/profile-pic | UploadController | Authenticated | Upload profile picture | ✅ Created |
+| POST | /api/upload/document | UploadController | Authenticated | Upload document | ✅ Created |
+| POST | /api/upload/event-image | UploadController | Authenticated | Upload event poster | ✅ Created |
+| POST | /api/upload/notes | UploadController | Authenticated | Upload notes file | ✅ Created |
+| POST | /api/upload/submission | UploadController | Authenticated | Upload submission file | ✅ Created |
 
 ---
 
@@ -390,7 +402,7 @@
 | ClubService | ClubServiceImpl | createClub, getClubsByCollege, approveByHOD/Principal, rejectByHOD/Principal, getClubRequests, joinClub | ✅ |
 | BatchService | BatchServiceImpl | createBatch, getBatchesByProfessor, createSection, getSectionsByBatch, getSectionsForStudent, updateBatch, deleteBatch, updateSection, deleteSection | ✅ |
 | SubmissionService | SubmissionServiceImpl | createSubmission (validated), getSubmissionsBySection, getSubmissionsByStudent (team-aware), addRemark | ✅ |
-| NotesService | NotesServiceImpl | uploadNotes, getNotesByProfessor/Department, updateNotes, deleteNotes | ✅ |
+| NotesService | NotesServiceImpl | uploadNotes, getNotesByProfessor/Department, updateNotes, deleteNotes, getNotesByYearSemesterDivision | ✏️ Modified |
 | BroadcastService | BroadcastServiceImpl | createBroadcast, getBroadcastsBySender, getRelevantBroadcasts | ✅ |
 | SeminarHallService | SeminarHallServiceImpl | createSeminarHall, getPublic/ByCollege/ByDepartment, updateSeminarHall | ✅ |
 | TimetableService | TimetableServiceImpl | createTimetable, getTimetableByDepartment, updateTimetable, deleteTimetable, generateAISuggestion, publishTimetable, archiveSemester, deleteTimetableSlot, getTimetableForStudent, getTimetableForProfessor, getTeacherScheduleMerged, getTimetableByDepartmentAndStatuses, getArchivedByDepartment | ✏️ Modified |
@@ -402,6 +414,7 @@
 | — | FCMService | sendToTopic, sendToToken | ✅ |
 | — | StripeService | createPaymentIntent, handleWebhookEvent | ✅ |
 | StudentProfileService | StudentProfileServiceImpl | getStudentProfile, updateStudentProfile | ✅ |
+| CloudinaryService | CloudinaryServiceImpl | uploadFile, deleteFile | ✅ |
 
 ---
 
@@ -421,6 +434,7 @@
 | springdoc-openapi-starter-webmvc-ui | 2.8.6 | Swagger UI |
 | firebase-admin | 9.4.2 | Firebase Storage + FCM |
 | stripe-java | 31.1.0 | Stripe payments (StripeClient API) |
+| cloudinary-http44 | 1.39.0 | Cloudinary media upload API |
 
 ---
 
@@ -446,6 +460,9 @@
 | groq.api.key | gsk_your_key_here | Groq API key for AI timetable |
 | groq.api.url | https://api.groq.com/openai/v1/chat/completions | Groq API endpoint |
 | groq.model | llama-3.3-70b-versatile | Groq LLM model |
+| cloudinary.cloud-name | YOUR_CLOUD_NAME | Cloudinary cloud name |
+| cloudinary.api-key | YOUR_API_KEY | Cloudinary API key |
+| cloudinary.api-secret | YOUR_API_SECRET | Cloudinary API secret |
 
 ---
 
@@ -453,6 +470,33 @@
 
 | Timestamp | Action | File | Details |
 |-----------|--------|------|---------|
+| Step-184 | MODIFY | ../campus_connect_fronted/src/pages/hod/TimetablePage.jsx | Added departmentId from useAuthStore to manual add slot request payload and replaced form tag with div block |
+| Step-183 | MODIFY | ../campus_connect_fronted/src/pages/professor/NotesPage.jsx | Updated year selection dropdown option labels to Year 1-4 |
+| Step-182 | MODIFY | ../campus_connect_fronted/src/utils/constants.js | Updated YEAR_LABELS mapping to return numeric format |
+| Step-181 | MODIFY | src/main/java/com/campusnexus/config/DataInitializer.java | Added automated database startup migration to convert existing FE/SE/TE/BE timetables to 1/2/3/4 format |
+| Step-180 | MODIFY | src/main/java/com/campusnexus/service/impl/NotesServiceImpl.java | Updated mapToResponse to return numeric string yearLabel instead of FE/SE/TE/BE codes |
+| Step-179 | MODIFY | src/main/java/com/campusnexus/service/impl/TimetableServiceImpl.java | Updated normalizeYear to return numeric strings '1' through '4' instead of FE/SE/TE/BE codes |
+| Step-178 | MODIFY | src/main/java/com/campusnexus/controller/StudentController.java | Made GET /timetable request parameters optional, adding student profile auto-fetching fallback |
+| Step-177 | MODIFY | src/main/java/com/campusnexus/service/impl/TimetableServiceImpl.java | Added slf4j logger and refactored getTimetableForStudent to call new repository query |
+| Step-176 | MODIFY | src/main/java/com/campusnexus/repository/TimetableRepository.java | Added findPublishedForStudent custom query for student timetable checks |
+| Step-175 | MODIFY | src/main/java/com/campusnexus/controller/StudentController.java | Updated GET /notes to filter by authenticated student's profile year/semester/division |
+| Step-174 | MODIFY | src/main/java/com/campusnexus/service/impl/NotesServiceImpl.java | Implemented getNotesByYearSemesterDivision, division mapping, and yearLabel formatting |
+| Step-173 | MODIFY | src/main/java/com/campusnexus/service/NotesService.java | Added getNotesByYearSemesterDivision signature to interface |
+| Step-172 | MODIFY | src/main/java/com/campusnexus/repository/NotesRepository.java | Added findRelevantNotes query with division filters |
+| Step-171 | MODIFY | src/main/java/com/campusnexus/dto/NotesResponse.java | Added division and yearLabel fields to DTO |
+| Step-170 | MODIFY | src/main/java/com/campusnexus/dto/NotesUploadRequest.java | Added optional division field to DTO |
+| Step-169 | MODIFY | src/main/java/com/campusnexus/entity/Notes.java | Made year/semester nullable and added nullable division string |
+| Step-168 | MODIFY | src/main/java/com/campusnexus/controller/UploadController.java | Added general profile-pic endpoint, configured dynamic submission type detection |
+| Step-167 | MODIFY | src/main/java/com/campusnexus/service/impl/CloudinaryServiceImpl.java | Preserved raw upload file extensions in options map |
+| Step-166 | MODIFY | PROJECT_CONTEXT.md | Updated final project statistics and summary registry |
+| Step-165 | MODIFY | src/main/java/com/campusnexus/config/SecurityConfig.java | Secured /api/upload/** paths under Spring Security authorization filter |
+| Step-164 | CREATE | src/main/java/com/campusnexus/controller/UploadController.java | Generic media upload endpoints supporting image, raw, and auto types |
+| Step-163 | MODIFY | src/main/java/com/campusnexus/controller/StudentController.java | Replaced FirebaseStorageService with CloudinaryService for profile pic and resume uploads, persisting URLs to DB |
+| Step-162 | CREATE | src/main/java/com/campusnexus/service/impl/CloudinaryServiceImpl.java | Cloudinary service implementation using Java SDK |
+| Step-161 | CREATE | src/main/java/com/campusnexus/service/CloudinaryService.java | Cloudinary service interface for upload/delete operations |
+| Step-160 | CREATE | src/main/java/com/campusnexus/config/CloudinaryConfig.java | Configuration bean to instantiate Cloudinary client |
+| Step-159 | MODIFY | src/main/resources/application.properties | Added Cloudinary properties & adjusted multipart request limit to 25MB |
+| Step-158 | MODIFY | pom.xml | Added Cloudinary dependency (1.39.0) |
 | Step-157 | MODIFY | ../campus_connect_fronted/src/pages/student/ProfilePage.jsx | Fixed profile prefill, form reset, and file upload submit |
 | Step-156 | MODIFY | ../campus_connect_fronted/src/api/student.api.js | Added profile picture and resume upload APIs |
 | Step-155 | MODIFY | src/main/java/com/campusnexus/controller/StudentController.java | Added print statements for Fetching student profile and Authenticated user to getProfile method |
@@ -658,11 +702,11 @@
 ---
 
 ## Final Summary
-- Total Files Created: 165
+- Total Files Created: 169
 - Total Entities: 18
-- Total Endpoints: 102
+- Total Endpoints: 108
 - Total Enums: 16
-- Total Services: 20 (17 interfaces + 3 standalone)
+- Total Services: 21 (18 interfaces + 3 standalone)
 - Build Command: mvn clean install
 - Run Command: mvn spring-boot:run
 - Swagger URL: http://localhost:8080/swagger-ui.html

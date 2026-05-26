@@ -20,6 +20,14 @@ public interface TimetableRepository extends JpaRepository<Timetable, UUID> {
     List<Timetable> findByDepartment_IdAndYearAndSemesterAndDivisionAndStatus(
             UUID deptId, String year, int semester, String division, TimetableStatus status);
 
+    @org.springframework.data.jpa.repository.Query("SELECT t FROM Timetable t WHERE t.department.id = :departmentId AND t.year = :year AND t.semester = :semester AND UPPER(t.division) = UPPER(:division) AND t.status = com.campusnexus.enums.TimetableStatus.PUBLISHED")
+    List<Timetable> findPublishedForStudent(
+            @org.springframework.data.repository.query.Param("departmentId") UUID departmentId,
+            @org.springframework.data.repository.query.Param("year") String year,
+            @org.springframework.data.repository.query.Param("semester") int semester,
+            @org.springframework.data.repository.query.Param("division") String division
+    );
+
     List<Timetable> findByTeacher_IdAndStatus(UUID teacherId, TimetableStatus status);
 
     boolean existsByTeacher_IdAndDayOfWeekAndStartTimeAndStatusNot(

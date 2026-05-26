@@ -27,5 +27,7 @@ public class NotesUploadRequest {
     @NotNull(message = "Semester is required")
     private Integer semester;
 
+    private String division;
+
     private String fileUrl;
 }

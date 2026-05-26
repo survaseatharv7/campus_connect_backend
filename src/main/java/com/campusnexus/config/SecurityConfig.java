@@ -56,6 +56,7 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/api/webhook/**"
                         ).permitAll()
+                        .requestMatchers("/api/upload/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())

@@ -93,9 +93,13 @@ public class TimetableServiceImpl implements TimetableService {
 
     @Override
     @Transactional
-    public TimetableResponse updateTimetable(UUID id, TimetableRequest request) {
+    public TimetableResponse updateTimetable(UUID id, TimetableRequest request, UUID departmentId) {
         Timetable timetable = timetableRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Timetable entry not found"));
+
+        if (!timetable.getDepartment().getId().equals(departmentId)) {
+            throw new BadRequestException("This timetable slot does not belong to your department");
+        }
 
         timetable.setDayOfWeek(normalizeDay(request.getDayOfWeek()));
         timetable.setStartTime(request.getStartTime());

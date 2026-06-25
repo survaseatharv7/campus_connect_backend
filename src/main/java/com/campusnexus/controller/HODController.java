@@ -194,8 +194,11 @@ public class HODController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Not found")
     })
     public ResponseEntity<ApiResponse<TimetableResponse>> updateTimetable(
-            @PathVariable UUID id, @Valid @RequestBody TimetableRequest request) {
-        TimetableResponse response = timetableService.updateTimetable(id, request);
+            @PathVariable UUID id,
+            @Valid @RequestBody TimetableRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        User user = getUser(userDetails);
+        TimetableResponse response = timetableService.updateTimetable(id, request, user.getDepartment().getId());
         return ResponseEntity.ok(ApiResponse.success("Timetable updated", response));
     }
 

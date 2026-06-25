@@ -11,9 +11,17 @@ import java.util.UUID;
 @Repository
 public interface EventRepository extends JpaRepository<Event, UUID> {
     List<Event> findByEventLevelOrderByStartDateTimeDesc(EventLevel eventLevel);
+
     List<Event> findByCollegeIdOrderByStartDateTimeDesc(UUID collegeId);
+
     List<Event> findByDepartmentIdOrderByStartDateTimeDesc(UUID departmentId);
+
     List<Event> findByCreatedByIdOrderByStartDateTimeDesc(UUID createdById);
+
     List<Event> findByParentEventIdOrderByStartDateTimeDesc(UUID parentEventId);
+
     List<Event> findByCollegeIdOrEventLevelOrderByStartDateTimeDesc(UUID collegeId, EventLevel eventLevel);
+
+    List<Event> findByOpenToExternalTrueAndStatusInOrderByStartDateTimeDesc(
+            List<com.campusnexus.enums.EventStatus> statuses);
 }

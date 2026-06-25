@@ -11,11 +11,13 @@ import com.campusnexus.exception.BadRequestException;
 import com.campusnexus.exception.DuplicateResourceException;
 import com.campusnexus.exception.ResourceNotFoundException;
 import com.campusnexus.exception.UnauthorizedException;
+import com.campusnexus.enums.EventStatus;
 import com.campusnexus.repository.EventRegistrationRepository;
 import com.campusnexus.repository.EventRepository;
 import com.campusnexus.repository.UserRepository;
 import com.campusnexus.service.EventRegistrationService;
 import com.campusnexus.service.NotificationService;
+import com.campusnexus.util.EventStatusUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,10 +36,10 @@ public class EventRegistrationServiceImpl implements EventRegistrationService {
     private final NotificationService notificationService;
 
     public EventRegistrationServiceImpl(EventRegistrationRepository registrationRepository,
-                                         EventRepository eventRepository,
-                                         UserRepository userRepository,
-                                         StripeService stripeService,
-                                         NotificationService notificationService) {
+            EventRepository eventRepository,
+            UserRepository userRepository,
+            StripeService stripeService,
+            NotificationService notificationService) {
         this.registrationRepository = registrationRepository;
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
@@ -53,6 +55,16 @@ public class EventRegistrationServiceImpl implements EventRegistrationService {
 
         User student = userRepository.findById(studentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found"));
+
+        // ── Issue #3 fix: validate event status before accepting registration ──────
+        EventStatus effectiveStatus = EventStatusUtil.compute(event);
+        if (effectiveStatus == EventStatus.COMPLETED) {
+            throw new BadRequestException("Registration is closed — this event has already ended.");
+        }
+        if (effectiveStatus == EventStatus.CANCELLED) {
+            throw new BadRequestException("Registration is closed — this event has been cancelled.");
+        }
+        // ─────────────────────────────────────────────────────────────────────────
 
         if (registrationRepository.existsByEventIdAndStudentId(eventId, studentId)) {
             throw new DuplicateResourceException("Already registered for this event");
@@ -93,10 +105,9 @@ public class EventRegistrationServiceImpl implements EventRegistrationService {
                     student.getEmail(),
                     "Event Registration Confirmed - " + event.getTitle(),
                     "You have been registered for " + event.getTitle() +
-                    ".\nTicket Code: " + ticketCode +
-                    "\nVenue: " + event.getVenue() +
-                    "\nDate: " + event.getStartDateTime()
-            );
+                            ".\nTicket Code: " + ticketCode +
+                            "\nVenue: " + event.getVenue() +
+                            "\nDate: " + event.getStartDateTime());
         }
 
         registration = registrationRepository.save(registration);

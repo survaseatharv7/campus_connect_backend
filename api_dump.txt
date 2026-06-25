@@ -1,0 +1,387 @@
+=== DTOs ===
+DTO ApiResponse:
+  boolean success
+  String message
+  T data
+  LocalDateTime timestamp
+DTO AssignHODRequest:
+  UUID userId
+DTO AssignPrincipalRequest:
+  String userEmail
+DTO AvailabilityResponse:
+  UUID id
+  String teacherName
+  LocalDate date
+  LocalTime fromTime
+  LocalTime toTime
+  TeacherAvailabilityStatus status
+  String note
+DTO BatchCreateRequest:
+  String batchName
+  Integer year
+  Integer semester
+  UUID departmentId
+DTO BatchResponse:
+  UUID id
+  String batchName
+  Integer year
+  Integer semester
+  String departmentName
+  String professorName
+  Integer sectionCount
+  LocalDateTime createdAt
+DTO BatchSectionCreateRequest:
+  String title
+  String description
+  BatchSectionType sectionType
+  LocalDate deadlineDate
+DTO BroadcastRequest:
+  String title
+  String message
+  BroadcastLevel level
+  String attachmentUrl
+DTO BroadcastResponse:
+  UUID id
+  String title
+  String message
+  String attachmentUrl
+  BroadcastLevel level
+  String levelLabel
+  String senderName
+  LocalDateTime sentAt
+DTO ClubCreateRequest:
+  String name
+  String description
+  UUID guideTeacherId
+  String logoUrl
+DTO ClubResponse:
+  UUID id
+  String name
+  String description
+  String logoUrl
+  ClubStatus status
+  String statusLabel
+  String guideName
+  Integer memberCount
+  String createdByName
+  LocalDateTime createdAt
+DTO CollegeCreateRequest:
+  String name
+  String address
+  String city
+  String state
+  String logoUrl
+DTO CollegeDropdownResponse:
+  UUID id
+  String name
+  String city
+DTO CollegeResponse:
+  UUID id
+  String uniqueCollegeCode
+  String name
+  String address
+  String city
+  String state
+  String logoUrl
+  CollegeStatus status
+  String principalName
+  LocalDateTime createdAt
+DTO DashboardResponse:
+  long totalColleges
+  long totalUsers
+  long totalEvents
+  long totalRegistrations
+  long totalClubs
+  long activeStudents
+DTO DepartmentCreateRequest:
+  String name
+  String code
+  UUID collegeId
+DTO DepartmentDropdownResponse:
+  UUID id
+  String name
+  String code
+DTO DepartmentResponse:
+  UUID id
+  String name
+  String code
+  String hodName
+  String collegeName
+  UUID collegeId
+  LocalDateTime createdAt
+DTO EventCreateRequest:
+  String title
+  String description
+  EventLevel eventLevel
+  EventType eventType
+  BigDecimal ticketPrice
+  LocalDateTime startDateTime
+  LocalDateTime endDateTime
+  String venue
+  Integer maxParticipants
+  UUID parentEventId
+  UUID clubId
+  UUID collegeId
+  UUID departmentId
+  String posterUrl
+DTO EventRegistrationRequest:
+  UUID eventId
+DTO EventRegistrationResponse:
+  UUID id
+  String ticketCode
+  TicketStatus ticketStatus
+  PaymentStatus paymentStatus
+  String stripeClientSecret
+  String eventTitle
+  LocalDateTime eventDate
+  LocalDateTime registeredAt
+DTO EventResponse:
+  UUID id
+  String title
+  String description
+  String posterUrl
+  EventLevel eventLevel
+  EventType eventType
+  EventStatus status
+  String createdByName
+  LocalDateTime startDateTime
+  LocalDateTime endDateTime
+  String venue
+  Integer maxParticipants
+  Integer registeredCount
+  Boolean isPaid
+  BigDecimal ticketPrice
+  LocalDateTime createdAt
+  List<EventResponse> subEvents
+DTO LoginRequest:
+  String email
+  String password
+DTO LoginResponse:
+  String accessToken
+  String refreshToken
+  Role role
+  UUID userId
+  String name
+  String email
+DTO NotesResponse:
+  UUID id
+  String title
+  String description
+  String fileUrl
+  String subject
+  Integer year
+  Integer semester
+  String uploaderName
+  String departmentName
+  LocalDateTime uploadedAt
+DTO NotesUploadRequest:
+  String title
+  String description
+  String subject
+  Integer year
+  Integer semester
+  String fileUrl
+DTO ProgressResponse:
+  UUID id
+  String studentName
+  String updatedByName
+  String progressNote
+  Integer percentage
+  String subject
+  LocalDateTime updatedAt
+DTO RefreshTokenRequest:
+  String refreshToken
+DTO RegisterRequest:
+  String name
+  String email
+  String password
+  String phone
+  Role role
+  UUID collegeId
+  UUID departmentId
+DTO SectionResponse:
+  UUID id
+  String title
+  String description
+  BatchSectionType sectionType
+  LocalDate deadlineDate
+  Boolean isActive
+  Integer submissionCount
+DTO SeminarHallBookingRequest:
+  UUID hallId
+  String eventOrPurpose
+  LocalDateTime fromDateTime
+  LocalDateTime toDateTime
+DTO SeminarHallRequest:
+  String name
+  Integer capacity
+  String location
+  String amenities
+  SeminarHallType hallType
+  UUID collegeId
+  UUID departmentId
+DTO SeminarHallResponse:
+  UUID id
+  String name
+  Integer capacity
+  String location
+  String amenities
+  SeminarHallType hallType
+  String collegeName
+  String departmentName
+  Boolean isActive
+DTO StudentProgressRequest:
+  String progressNote
+  Integer percentage
+  String subject
+DTO SubmissionRemarkRequest:
+  String remark
+  SubmissionStatus status
+DTO SubmissionRequest:
+  SubmissionType submissionType
+  String fileUrl
+  String description
+  String teamName
+  List<UUID> teamMemberIds
+DTO SubmissionResponse:
+  UUID id
+  String studentName
+  String teamName
+  List<String> teamMembers
+  SubmissionType submissionType
+  String fileUrl
+  String description
+  LocalDateTime submittedAt
+  SubmissionStatus status
+  String professorRemark
+  LocalDateTime remarkAt
+  String reviewedByName
+DTO TeacherAvailabilityRequest:
+  LocalDate date
+  LocalTime fromTime
+  LocalTime toTime
+  TeacherAvailabilityStatus status
+  String note
+DTO TimetableRequest:
+  UUID batchId
+  String dayOfWeek
+  LocalTime fromTime
+  LocalTime toTime
+  String subject
+  UUID teacherId
+  String room
+DTO TimetableResponse:
+  UUID id
+  String dayOfWeek
+  LocalTime fromTime
+  LocalTime toTime
+  String subject
+  String teacherName
+  String batchName
+  String room
+DTO UpdateProfileRequest:
+  String name
+  String phone
+  String profilePicUrl
+  String fcmToken
+DTO UserSearchResponse:
+  UUID id
+  String name
+  String email
+  String phone
+  String role
+
+=== Controllers ===
+
+Controller: AuthController.java (Base: /api/auth)
+POST /api/auth/register -> Body: RegisterRequest -> Returns: ApiResponse<LoginResponse>
+POST /api/auth/login -> Body: LoginRequest -> Returns: ApiResponse<LoginResponse>
+POST /api/auth/refresh -> Body: RefreshTokenRequest -> Returns: ApiResponse<LoginResponse>
+POST /api/auth/logout -> Body: None -> Returns: ApiResponse<Void>
+GET /api/auth/colleges -> Body: None -> Returns: ApiResponse<List<CollegeDropdownResponse>>
+GET /api/auth/departments/{collegeId} -> Body: None -> Returns: ApiResponse<List<DepartmentDropdownResponse>>
+
+Controller: CampusAdminController.java (Base: /api/admin)
+GET /api/admin/search-users -> Body: None -> Returns: ApiResponse<List<UserSearchResponse>>
+POST /api/admin/colleges -> Body: CollegeCreateRequest -> Returns: ApiResponse<CollegeResponse>
+GET /api/admin/colleges -> Body: None -> Returns: ApiResponse<List<CollegeResponse>>
+PUT /api/admin/colleges/{id}/approve -> Body: None -> Returns: ApiResponse<CollegeResponse>
+PUT /api/admin/colleges/{id}/status -> Body: None -> Returns: ApiResponse<CollegeResponse>
+PUT /api/admin/colleges/{id}/assign-principal -> Body: AssignPrincipalRequest -> Returns: ApiResponse<CollegeResponse>
+POST /api/admin/seminar-halls -> Body: SeminarHallRequest -> Returns: ApiResponse<SeminarHallResponse>
+GET /api/admin/seminar-halls -> Body: None -> Returns: ApiResponse<List<SeminarHallResponse>>
+POST /api/admin/events -> Body: EventCreateRequest -> Returns: ApiResponse<EventResponse>
+GET /api/admin/events -> Body: None -> Returns: ApiResponse<List<EventResponse>>
+POST /api/admin/broadcasts -> Body: BroadcastRequest -> Returns: ApiResponse<BroadcastResponse>
+GET /api/admin/dashboard -> Body: None -> Returns: ApiResponse<DashboardResponse>
+
+Controller: HODController.java (Base: /api/hod)
+POST /api/hod/events -> Body: EventCreateRequest -> Returns: ApiResponse<EventResponse>
+GET /api/hod/events -> Body: None -> Returns: ApiResponse<List<EventResponse>>
+PUT /api/hod/events/{id}/approve -> Body: None -> Returns: ApiResponse<EventResponse>
+POST /api/hod/club-requests/{clubId}/approve -> Body: None -> Returns: ApiResponse<ClubResponse>
+POST /api/hod/club-requests/{clubId}/reject -> Body: None -> Returns: ApiResponse<ClubResponse>
+GET /api/hod/club-requests -> Body: None -> Returns: ApiResponse<List<ClubResponse>>
+POST /api/hod/timetable -> Body: TimetableRequest -> Returns: ApiResponse<TimetableResponse>
+GET /api/hod/timetable -> Body: None -> Returns: ApiResponse<List<TimetableResponse>>
+PUT /api/hod/timetable/{id} -> Body: TimetableRequest -> Returns: ApiResponse<TimetableResponse>
+DELETE /api/hod/timetable/{id} -> Body: None -> Returns: ApiResponse<Void>
+POST /api/hod/seminar-halls -> Body: SeminarHallRequest -> Returns: ApiResponse<SeminarHallResponse>
+GET /api/hod/seminar-halls -> Body: None -> Returns: ApiResponse<List<SeminarHallResponse>>
+POST /api/hod/broadcasts -> Body: BroadcastRequest -> Returns: ApiResponse<BroadcastResponse>
+
+Controller: PrincipalController.java (Base: /api/principal)
+POST /api/principal/departments -> Body: DepartmentCreateRequest -> Returns: ApiResponse<DepartmentResponse>
+GET /api/principal/departments -> Body: None -> Returns: ApiResponse<List<DepartmentResponse>>
+PUT /api/principal/departments/{id}/assign-hod -> Body: AssignHODRequest -> Returns: ApiResponse<DepartmentResponse>
+GET /api/principal/professors -> Body: None -> Returns: ApiResponse<List<UserSearchResponse>>
+POST /api/principal/club-requests/{clubId}/approve -> Body: None -> Returns: ApiResponse<ClubResponse>
+POST /api/principal/club-requests/{clubId}/reject -> Body: None -> Returns: ApiResponse<ClubResponse>
+GET /api/principal/club-requests -> Body: None -> Returns: ApiResponse<List<ClubResponse>>
+POST /api/principal/seminar-halls -> Body: SeminarHallRequest -> Returns: ApiResponse<SeminarHallResponse>
+GET /api/principal/seminar-halls -> Body: None -> Returns: ApiResponse<List<SeminarHallResponse>>
+PUT /api/principal/seminar-halls/{id} -> Body: SeminarHallRequest -> Returns: ApiResponse<SeminarHallResponse>
+POST /api/principal/events -> Body: EventCreateRequest -> Returns: ApiResponse<EventResponse>
+GET /api/principal/events -> Body: None -> Returns: ApiResponse<List<EventResponse>>
+PUT /api/principal/events/{id}/approve -> Body: None -> Returns: ApiResponse<EventResponse>
+POST /api/principal/broadcasts -> Body: BroadcastRequest -> Returns: ApiResponse<BroadcastResponse>
+GET /api/principal/broadcasts -> Body: None -> Returns: ApiResponse<List<BroadcastResponse>>
+
+Controller: ProfessorController.java (Base: /api/professor)
+POST /api/professor/batches -> Body: BatchCreateRequest -> Returns: ApiResponse<BatchResponse>
+GET /api/professor/batches -> Body: None -> Returns: ApiResponse<List<BatchResponse>>
+POST /api/professor/batches/{batchId}/sections -> Body: BatchSectionCreateRequest -> Returns: ApiResponse<SectionResponse>
+GET /api/professor/batches/{batchId}/sections -> Body: None -> Returns: ApiResponse<List<SectionResponse>>
+GET /api/professor/submissions/{sectionId} -> Body: None -> Returns: ApiResponse<List<SubmissionResponse>>
+PUT /api/professor/submissions/{submissionId}/remark -> Body: SubmissionRemarkRequest -> Returns: ApiResponse<SubmissionResponse>
+POST /api/professor/notes -> Body: NotesUploadRequest -> Returns: ApiResponse<NotesResponse>
+GET /api/professor/notes -> Body: None -> Returns: ApiResponse<List<NotesResponse>>
+PUT /api/professor/notes/{id} -> Body: NotesUploadRequest -> Returns: ApiResponse<NotesResponse>
+DELETE /api/professor/notes/{id} -> Body: None -> Returns: ApiResponse<Void>
+POST /api/professor/availability -> Body: TeacherAvailabilityRequest -> Returns: ApiResponse<AvailabilityResponse>
+GET /api/professor/availability -> Body: None -> Returns: ApiResponse<List<AvailabilityResponse>>
+PUT /api/professor/availability/{id} -> Body: TeacherAvailabilityRequest -> Returns: ApiResponse<AvailabilityResponse>
+POST /api/professor/events -> Body: EventCreateRequest -> Returns: ApiResponse<EventResponse>
+GET /api/professor/events -> Body: None -> Returns: ApiResponse<List<EventResponse>>
+POST /api/professor/student-progress/{studentId} -> Body: StudentProgressRequest -> Returns: ApiResponse<ProgressResponse>
+GET /api/professor/student-progress/{studentId} -> Body: None -> Returns: ApiResponse<List<ProgressResponse>>
+
+Controller: StudentController.java (Base: /api/student)
+GET /api/student/events -> Body: None -> Returns: ApiResponse<List<EventResponse>>
+POST /api/student/events/{eventId}/register -> Body: None -> Returns: ApiResponse<EventRegistrationResponse>
+GET /api/student/events/my-registrations -> Body: None -> Returns: ApiResponse<List<EventRegistrationResponse>>
+GET /api/student/events/{eventId}/ticket -> Body: None -> Returns: ApiResponse<EventRegistrationResponse>
+POST /api/student/clubs -> Body: ClubCreateRequest -> Returns: ApiResponse<ClubResponse>
+GET /api/student/clubs -> Body: None -> Returns: ApiResponse<List<ClubResponse>>
+POST /api/student/clubs/{clubId}/join -> Body: None -> Returns: ApiResponse<ClubResponse>
+POST /api/student/submissions/{sectionId} -> Body: SubmissionRequest -> Returns: ApiResponse<SubmissionResponse>
+GET /api/student/submissions -> Body: None -> Returns: ApiResponse<List<SubmissionResponse>>
+GET /api/student/notes -> Body: None -> Returns: ApiResponse<List<NotesResponse>>
+GET /api/student/broadcasts -> Body: None -> Returns: ApiResponse<List<BroadcastResponse>>
+GET /api/student/timetable -> Body: None -> Returns: ApiResponse<List<TimetableResponse>>
+GET /api/student/teacher-availability -> Body: None -> Returns: ApiResponse<List<AvailabilityResponse>>
+GET /api/student/progress -> Body: None -> Returns: ApiResponse<List<ProgressResponse>>
+PUT /api/student/profile -> Body: UpdateProfileRequest -> Returns: ApiResponse<String>
+
+Controller: WebhookController.java (Base: /api/webhook)
+POST /api/webhook/stripe -> Body: String -> Returns: ApiResponse<Void>

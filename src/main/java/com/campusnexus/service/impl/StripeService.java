@@ -1,0 +1,160 @@
+package com.campusnexus.service.impl;
+
+import com.campusnexus.entity.EventRegistration;
+import com.campusnexus.entity.ExternalRegistration;
+import com.campusnexus.enums.PaymentStatus;
+import com.campusnexus.enums.TicketStatus;
+import com.campusnexus.exception.PaymentException;
+import com.campusnexus.repository.EventRepository;
+import com.campusnexus.repository.EventRegistrationRepository;
+import com.campusnexus.repository.ExternalRegistrationRepository;
+import com.campusnexus.service.NotificationService;
+import com.stripe.StripeClient;
+import com.stripe.exception.StripeException;
+import com.stripe.model.Event;
+import com.stripe.model.PaymentIntent;
+import com.stripe.net.Webhook;
+import com.stripe.param.PaymentIntentCreateParams;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+@Service
+public class StripeService {
+
+    private static final Logger logger = LoggerFactory.getLogger(StripeService.class);
+
+    private final StripeClient stripeClient;
+    private final EventRegistrationRepository eventRegistrationRepository;
+    private final ExternalRegistrationRepository externalRegistrationRepository;
+    private final EventRepository eventRepository;
+    private final NotificationService notificationService;
+    private final FCMService fcmService;
+
+    @Value("${stripe.webhook-secret}")
+    private String webhookSecret;
+
+    public StripeService(StripeClient stripeClient,
+                         EventRegistrationRepository eventRegistrationRepository,
+                         ExternalRegistrationRepository externalRegistrationRepository,
+                         EventRepository eventRepository,
+                         NotificationService notificationService,
+                         FCMService fcmService) {
+        this.stripeClient = stripeClient;
+        this.eventRegistrationRepository = eventRegistrationRepository;
+        this.externalRegistrationRepository = externalRegistrationRepository;
+        this.eventRepository = eventRepository;
+        this.notificationService = notificationService;
+        this.fcmService = fcmService;
+    }
+
+    public Map<String, String> createPaymentIntent(BigDecimal amount, String currency,
+                                                     UUID eventId, UUID studentId) {
+        try {
+            PaymentIntentCreateParams.Builder paramsBuilder = PaymentIntentCreateParams.builder()
+                    .setAmount(amount.multiply(BigDecimal.valueOf(100)).longValue())
+                    .setCurrency(currency)
+                    .putMetadata("eventId", eventId.toString());
+
+            if (studentId != null) {
+                paramsBuilder.putMetadata("studentId", studentId.toString());
+            } else {
+                paramsBuilder.putMetadata("isExternal", "true");
+            }
+
+            PaymentIntent paymentIntent = stripeClient.v1().paymentIntents().create(paramsBuilder.build());
+
+            Map<String, String> result = new HashMap<>();
+            result.put("clientSecret", paymentIntent.getClientSecret());
+            result.put("paymentIntentId", paymentIntent.getId());
+            return result;
+        } catch (StripeException e) {
+            logger.error("Stripe PaymentIntent creation failed: {}", e.getMessage());
+            throw new PaymentException("Failed to create payment: " + e.getMessage());
+        }
+    }
+
+    @Transactional
+    public void handleWebhookEvent(String payload, String sigHeader) {
+        try {
+            Event event = Webhook.constructEvent(payload, sigHeader, webhookSecret);
+
+            if ("payment_intent.succeeded".equals(event.getType())) {
+                PaymentIntent paymentIntent = (PaymentIntent) event.getDataObjectDeserializer()
+                        .getObject()
+                        .orElseThrow(() -> new PaymentException("Failed to deserialize payment intent"));
+
+                EventRegistration registration = eventRegistrationRepository
+                        .findByStripePaymentIntentId(paymentIntent.getId())
+                        .orElse(null);
+
+                if (registration != null) {
+                    registration.setTicketStatus(TicketStatus.CONFIRMED);
+                    registration.setPaymentStatus(PaymentStatus.SUCCESS);
+                    eventRegistrationRepository.save(registration);
+
+                    // Send confirmation email
+                    String studentEmail = registration.getStudent().getEmail();
+                    String eventTitle = registration.getEvent().getTitle();
+                    notificationService.sendEmail(
+                            studentEmail,
+                            "Event Registration Confirmed - " + eventTitle,
+                            "Your registration for " + eventTitle + " has been confirmed.\n" +
+                            "Ticket Code: " + registration.getTicketCode() + "\n" +
+                            "Thank you for registering!"
+                    );
+
+                    // Send FCM notification if token available
+                    String fcmToken = registration.getStudent().getFcmToken();
+                    if (fcmToken != null && !fcmToken.isEmpty()) {
+                        fcmService.sendToToken(fcmToken,
+                                "Registration Confirmed",
+                                "Your ticket for " + eventTitle + " is confirmed!");
+                    }
+
+                    logger.info("Payment confirmed for registration: {}", registration.getId());
+                } else {
+                    ExternalRegistration extReg = externalRegistrationRepository
+                            .findByStripePaymentIntentId(paymentIntent.getId())
+                            .orElse(null);
+
+                    if (extReg != null) {
+                        extReg.setTicketStatus(TicketStatus.CONFIRMED);
+                        extReg.setPaymentStatus(PaymentStatus.SUCCESS);
+                        externalRegistrationRepository.save(extReg);
+
+                        com.campusnexus.entity.Event ev = extReg.getEvent();
+                        ev.setRegisteredCount(ev.getRegisteredCount() + 1);
+                        eventRepository.save(ev);
+
+                        // Send confirmation email to external guest
+                        String guestEmail = extReg.getGuestEmail();
+                        String eventTitle = ev.getTitle();
+                        notificationService.sendEmail(
+                                guestEmail,
+                                "Event Registration Confirmed - " + eventTitle,
+                                "Your registration for " + eventTitle + " has been confirmed.\n" +
+                                "Guest Name: " + extReg.getGuestName() + "\n" +
+                                "Thank you for registering!"
+                        );
+
+                        logger.info("Payment confirmed for external registration: {}", extReg.getId());
+                    }
+                }
+            }
+        } catch (StripeException e) {
+            logger.error("Stripe webhook signature verification failed: {}", e.getMessage());
+            throw new PaymentException("Invalid webhook signature");
+        } catch (Exception e) {
+            logger.error("Stripe webhook processing failed: {}", e.getMessage());
+            throw new PaymentException("Webhook processing failed: " + e.getMessage());
+        }
+    }
+}

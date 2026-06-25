@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "841158055034",
+    "project_id": "petzstore-c4f70",
+    "storage_bucket": "petzstore-c4f70.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:841158055034:android:a9c15d45fc3251e91ed7c3",
+        "android_client_info": {
+          "package_name": "com.example.my_pet_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCn47k9w59671g9vLgZ0zgMWUnnCzBpDDc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:841158055034:android:4ead6b5781a63bc71ed7c3",
+        "android_client_info": {
+          "package_name": "com.petconnect.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCn47k9w59671g9vLgZ0zgMWUnnCzBpDDc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

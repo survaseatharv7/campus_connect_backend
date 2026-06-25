@@ -35,13 +35,13 @@ public class AuthServiceImpl implements AuthService {
     private final UserDetailsService userDetailsService;
 
     public AuthServiceImpl(UserRepository userRepository,
-                           CollegeRepository collegeRepository,
-                           DepartmentRepository departmentRepository,
-                           InvalidatedTokenRepository invalidatedTokenRepository,
-                           PasswordEncoder passwordEncoder,
-                           JwtUtil jwtUtil,
-                           AuthenticationManager authenticationManager,
-                           UserDetailsService userDetailsService) {
+            CollegeRepository collegeRepository,
+            DepartmentRepository departmentRepository,
+            InvalidatedTokenRepository invalidatedTokenRepository,
+            PasswordEncoder passwordEncoder,
+            JwtUtil jwtUtil,
+            AuthenticationManager authenticationManager,
+            UserDetailsService userDetailsService) {
         this.userRepository = userRepository;
         this.collegeRepository = collegeRepository;
         this.departmentRepository = departmentRepository;
@@ -101,8 +101,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public LoginResponse login(LoginRequest request) {
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
-        );
+                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
 
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         User user = userRepository.findByEmail(request.getEmail())

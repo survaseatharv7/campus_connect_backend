@@ -37,6 +37,7 @@ public class CampusAdminController {
     private final DashboardService dashboardService;
     private final UserRepository userRepository;
     private final EventRegistrationService eventRegistrationService;
+    private final ExternalEventService externalEventService;
 
     public CampusAdminController(CollegeService collegeService,
                                  SeminarHallService seminarHallService,
@@ -44,7 +45,8 @@ public class CampusAdminController {
                                  BroadcastService broadcastService,
                                  DashboardService dashboardService,
                                  UserRepository userRepository,
-                                 EventRegistrationService eventRegistrationService) {
+                                 EventRegistrationService eventRegistrationService,
+                                 ExternalEventService externalEventService) {
         this.collegeService = collegeService;
         this.seminarHallService = seminarHallService;
         this.eventService = eventService;
@@ -52,6 +54,7 @@ public class CampusAdminController {
         this.dashboardService = dashboardService;
         this.userRepository = userRepository;
         this.eventRegistrationService = eventRegistrationService;
+        this.externalEventService = externalEventService;
     }
 
     // ─── User Search ─────────────────────────────────────────────────────────────
@@ -206,6 +209,17 @@ public class CampusAdminController {
         User user = getUser(userDetails);
         return ResponseEntity.ok(ApiResponse.success("Participants retrieved",
                 eventRegistrationService.getParticipants(eventId, user.getId())));
+    }
+
+    @GetMapping("/events/{eventId}/external-participants")
+    @Operation(summary = "List external event participants", description = "List guest external participants for an event")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "External participants retrieved")
+    })
+    public ResponseEntity<ApiResponse<List<ExternalRegistrationResponse>>> getExternalParticipants(
+            @PathVariable UUID eventId) {
+        return ResponseEntity.ok(ApiResponse.success("External participants retrieved",
+                externalEventService.getRegistrationsByEvent(eventId)));
     }
 
     @PutMapping("/events/{eventId}/status")

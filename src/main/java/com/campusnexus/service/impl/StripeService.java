@@ -1,10 +1,13 @@
 package com.campusnexus.service.impl;
 
 import com.campusnexus.entity.EventRegistration;
+import com.campusnexus.entity.ExternalRegistration;
 import com.campusnexus.enums.PaymentStatus;
 import com.campusnexus.enums.TicketStatus;
 import com.campusnexus.exception.PaymentException;
+import com.campusnexus.repository.EventRepository;
 import com.campusnexus.repository.EventRegistrationRepository;
+import com.campusnexus.repository.ExternalRegistrationRepository;
 import com.campusnexus.service.NotificationService;
 import com.stripe.StripeClient;
 import com.stripe.exception.StripeException;
@@ -30,6 +33,8 @@ public class StripeService {
 
     private final StripeClient stripeClient;
     private final EventRegistrationRepository eventRegistrationRepository;
+    private final ExternalRegistrationRepository externalRegistrationRepository;
+    private final EventRepository eventRepository;
     private final NotificationService notificationService;
     private final FCMService fcmService;
 
@@ -38,10 +43,14 @@ public class StripeService {
 
     public StripeService(StripeClient stripeClient,
                          EventRegistrationRepository eventRegistrationRepository,
+                         ExternalRegistrationRepository externalRegistrationRepository,
+                         EventRepository eventRepository,
                          NotificationService notificationService,
                          FCMService fcmService) {
         this.stripeClient = stripeClient;
         this.eventRegistrationRepository = eventRegistrationRepository;
+        this.externalRegistrationRepository = externalRegistrationRepository;
+        this.eventRepository = eventRepository;
         this.notificationService = notificationService;
         this.fcmService = fcmService;
     }
@@ -49,14 +58,18 @@ public class StripeService {
     public Map<String, String> createPaymentIntent(BigDecimal amount, String currency,
                                                      UUID eventId, UUID studentId) {
         try {
-            PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
+            PaymentIntentCreateParams.Builder paramsBuilder = PaymentIntentCreateParams.builder()
                     .setAmount(amount.multiply(BigDecimal.valueOf(100)).longValue())
                     .setCurrency(currency)
-                    .putMetadata("eventId", eventId.toString())
-                    .putMetadata("studentId", studentId.toString())
-                    .build();
+                    .putMetadata("eventId", eventId.toString());
 
-            PaymentIntent paymentIntent = stripeClient.v1().paymentIntents().create(params);
+            if (studentId != null) {
+                paramsBuilder.putMetadata("studentId", studentId.toString());
+            } else {
+                paramsBuilder.putMetadata("isExternal", "true");
+            }
+
+            PaymentIntent paymentIntent = stripeClient.v1().paymentIntents().create(paramsBuilder.build());
 
             Map<String, String> result = new HashMap<>();
             result.put("clientSecret", paymentIntent.getClientSecret());
@@ -107,6 +120,33 @@ public class StripeService {
                     }
 
                     logger.info("Payment confirmed for registration: {}", registration.getId());
+                } else {
+                    ExternalRegistration extReg = externalRegistrationRepository
+                            .findByStripePaymentIntentId(paymentIntent.getId())
+                            .orElse(null);
+
+                    if (extReg != null) {
+                        extReg.setTicketStatus(TicketStatus.CONFIRMED);
+                        extReg.setPaymentStatus(PaymentStatus.SUCCESS);
+                        externalRegistrationRepository.save(extReg);
+
+                        com.campusnexus.entity.Event ev = extReg.getEvent();
+                        ev.setRegisteredCount(ev.getRegisteredCount() + 1);
+                        eventRepository.save(ev);
+
+                        // Send confirmation email to external guest
+                        String guestEmail = extReg.getGuestEmail();
+                        String eventTitle = ev.getTitle();
+                        notificationService.sendEmail(
+                                guestEmail,
+                                "Event Registration Confirmed - " + eventTitle,
+                                "Your registration for " + eventTitle + " has been confirmed.\n" +
+                                "Guest Name: " + extReg.getGuestName() + "\n" +
+                                "Thank you for registering!"
+                        );
+
+                        logger.info("Payment confirmed for external registration: {}", extReg.getId());
+                    }
                 }
             }
         } catch (StripeException e) {

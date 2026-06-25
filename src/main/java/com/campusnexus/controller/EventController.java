@@ -33,15 +33,18 @@ public class EventController {
     private final UserRepository userRepository;
 
     public EventController(EventRegistrationService eventRegistrationService,
-                           EventService eventService,
-                           UserRepository userRepository) {
+            EventService eventService,
+            UserRepository userRepository) {
         this.eventRegistrationService = eventRegistrationService;
         this.eventService = eventService;
         this.userRepository = userRepository;
     }
 
     @GetMapping("/{eventId}/participants")
-    @Operation(summary = "List event participants", description = "Get list of registered participants (requires admin, principal, hod, professor or being the creator)")
+    @Operation(
+        summary = "List event participants",
+        description = "Get list of registered participants (requires admin, principal, hod, professor or being the creator)"
+    )
     public ResponseEntity<ApiResponse<List<EventParticipantResponse>>> getParticipants(
             @PathVariable UUID eventId,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -50,8 +53,20 @@ public class EventController {
                 eventRegistrationService.getParticipants(eventId, user.getId())));
     }
 
+    /**
+     * Update the status of an event.
+     *
+     * <p><b>Important:</b> Only {@code CANCELLED} is a valid manual status override.
+     * Time-based statuses (UPCOMING, ONGOING, COMPLETED) are computed dynamically and
+     * cannot be set via this endpoint. Attempting to set them returns {@code 400 Bad Request}.
+     */
     @PutMapping("/{eventId}/status")
-    @Operation(summary = "Update event status", description = "Update status of an event (requires creator privileges)")
+    @Operation(
+        summary = "Cancel an event",
+        description = "Set an event status to CANCELLED. Only the event creator may call this. " +
+                      "UPCOMING, ONGOING, and COMPLETED are derived automatically from event dates " +
+                      "and cannot be set manually."
+    )
     public ResponseEntity<ApiResponse<EventResponse>> updateEventStatus(
             @PathVariable UUID eventId,
             @Valid @RequestBody UpdateEventStatusRequest request,
@@ -60,6 +75,31 @@ public class EventController {
         return ResponseEntity.ok(ApiResponse.success("Event status updated",
                 eventService.updateEventStatus(eventId, request.getStatus(), user.getId())));
     }
+
+    /**
+     * Permanently delete an event.
+     *
+     * <p>Only the event creator (owner) may delete their own event. The deletion
+     * cascades to all dependent records: internal registrations, external registrations,
+     * and sub-events. The Firebase poster image is also removed on a best-effort basis.
+     *
+     * <p>Returns {@code 200 OK} with a success message on completion.
+     */
+    @DeleteMapping("/{eventId}")
+    @Operation(
+        summary = "Delete an event (owner only)",
+        description = "Permanently deletes an event and all its associated registrations, " +
+                      "sub-events, and Firebase poster image. Only the original event creator may call this."
+    )
+    public ResponseEntity<ApiResponse<Void>> deleteEvent(
+            @PathVariable UUID eventId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        User user = getUser(userDetails);
+        eventService.deleteEvent(eventId, user.getId());
+        return ResponseEntity.ok(ApiResponse.success("Event deleted successfully"));
+    }
+
+    // ─── Helpers ─────────────────────────────────────────────────────────────────
 
     private User getUser(UserDetails userDetails) {
         return userRepository.findByEmail(userDetails.getUsername())

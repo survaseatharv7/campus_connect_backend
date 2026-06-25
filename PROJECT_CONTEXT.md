@@ -36,7 +36,7 @@
 
 | # | File Path | Type | Status | Description |
 |---|-----------|------|--------|-------------|
-| 1 | pom.xml | Config | ✏️ Modified | Maven build config with all dependencies, added Cloudinary |
+| 1 | pom.xml | Config | ✏️ Modified | Maven build config, let Spring Boot parent manage compiler settings and Lombok annotation processing |
 | 2 | src/main/resources/application.properties | Config | ✏️ Modified | All config properties + ngrok/CORS props |
 | 3 | src/main/java/com/campusnexus/CampusNexusApplication.java | Main | ✅ Created | Spring Boot main class |
 | 4 | src/main/java/com/campusnexus/enums/Role.java | Enum | ✅ Created | CAMPUS_ADMIN, PRINCIPAL, HOD, PROFESSOR, STUDENT |
@@ -61,7 +61,7 @@
 | 23 | src/main/java/com/campusnexus/entity/BatchSection.java | Entity | ✏️ Modified | Added deadline field |
 | 24 | src/main/java/com/campusnexus/entity/Submission.java | Entity | ✅ Created | Submission with team and review |
 | 25 | src/main/java/com/campusnexus/entity/Club.java | Entity | ✅ Created | Club with approval chain |
-| 26 | src/main/java/com/campusnexus/entity/Event.java | Entity | ✏️ Modified | Added @JsonIgnore to all relational fields to break cycles |
+| 26 | src/main/java/com/campusnexus/entity/Event.java | Entity | ✏️ Modified | Added openToExternal field and @JsonIgnore to break cycles, made nullable to support database auto-update |
 | 27 | src/main/java/com/campusnexus/entity/EventRegistration.java | Entity | ✏️ Modified | Added @JsonIgnore to student and event |
 | 28 | src/main/java/com/campusnexus/entity/SeminarHall.java | Entity | ✅ Created | Seminar hall with type/capacity |
 | 29 | src/main/java/com/campusnexus/entity/SeminarHallBooking.java | Entity | ✅ Created | Hall booking with time range |
@@ -78,7 +78,7 @@
 | 40 | src/main/java/com/campusnexus/repository/BatchSectionRepository.java | Repository | ✏️ Modified | Added findByBatchDepartmentId query |
 | 41 | src/main/java/com/campusnexus/repository/SubmissionRepository.java | Repository | ✏️ Modified | Added team-aware existence check for pending tasks |
 | 42 | src/main/java/com/campusnexus/repository/ClubRepository.java | Repository | ✅ Created | Club queries with status filter |
-| 43 | src/main/java/com/campusnexus/repository/EventRepository.java | Repository | ✏️ Modified | Added sorting by startDateTime DESC to finder methods |
+| 43 | src/main/java/com/campusnexus/repository/EventRepository.java | Repository | ✏️ Modified | Added sorting by startDateTime DESC and openToExternal status queries |
 | 44 | src/main/java/com/campusnexus/repository/EventRegistrationRepository.java | Repository | ✅ Created | Registration queries with Stripe |
 | 45 | src/main/java/com/campusnexus/repository/SeminarHallRepository.java | Repository | ✅ Created | SeminarHall queries |
 | 46 | src/main/java/com/campusnexus/repository/SeminarHallBookingRepository.java | Repository | ✅ Created | Booking queries |
@@ -95,7 +95,7 @@
 | 57 | src/main/java/com/campusnexus/dto/DepartmentCreateRequest.java | DTO | ✅ Created | Department creation |
 | 58 | src/main/java/com/campusnexus/dto/AssignPrincipalRequest.java | DTO | ✅ Created | Principal assignment |
 | 59 | src/main/java/com/campusnexus/dto/AssignHODRequest.java | DTO | ✅ Created | HOD assignment |
-| 60 | src/main/java/com/campusnexus/dto/EventCreateRequest.java | DTO | ✅ Created | Event creation |
+| 60 | src/main/java/com/campusnexus/dto/EventCreateRequest.java | DTO | ✏️ Modified | Added @DecimalMin("0.00") and @Digits on ticketPrice; blocks negative prices at validation layer |
 | 60.1 | src/main/java/com/campusnexus/dto/UpdateEventStatusRequest.java | DTO | ✅ Created | Update event status |
 | 61 | src/main/java/com/campusnexus/dto/EventRegistrationRequest.java | DTO | ✅ Created | Event registration |
 | 62 | src/main/java/com/campusnexus/dto/ClubCreateRequest.java | DTO | ✅ Created | Club creation |
@@ -115,7 +115,7 @@
 | 76 | src/main/java/com/campusnexus/dto/LoginResponse.java | DTO | ✅ Created | Login response with tokens |
 | 77 | src/main/java/com/campusnexus/dto/CollegeResponse.java | DTO | ✅ Created | College response |
 | 78 | src/main/java/com/campusnexus/dto/DepartmentResponse.java | DTO | ✅ Created | Department response |
-| 121 | src/main/java/com/campusnexus/dto/EventResponse.java | DTO | ✏️ Modified | Added isRegistered flag |
+| 121 | src/main/java/com/campusnexus/dto/EventResponse.java | DTO | ✏️ Modified | Added isRegistered flag and openToExternal support |
 | 80 | src/main/java/com/campusnexus/dto/EventRegistrationResponse.java | DTO | ✏️ Modified | Registration/ticket response |
 | 80.1 | src/main/java/com/campusnexus/dto/EventParticipantResponse.java | DTO | ✅ Created | Participants list response |
 | 81 | src/main/java/com/campusnexus/dto/ClubResponse.java | DTO | ✏️ Modified | Added isMember and isOwner flags |
@@ -139,7 +139,7 @@
 | 99 | src/main/java/com/campusnexus/security/JwtAuthFilter.java | Security | ✅ Created | JWT filter with blocklist |
 | 100 | src/main/java/com/campusnexus/security/UserDetailsServiceImpl.java | Security | ✅ Created | UserDetails from DB |
 | 101 | src/main/java/com/campusnexus/security/JwtAuthEntryPoint.java | Security | ✅ Created | Auth entry point |
-| 102 | src/main/java/com/campusnexus/config/SecurityConfig.java | Config | ✏️ Modified | Spring Security 7 config + CORS fix, secured upload paths |
+| 102 | src/main/java/com/campusnexus/config/SecurityConfig.java | Config | ✏️ Modified | Spring Security 7 config, CORS fix, secured upload paths, and public guest event permissions |
 | 103 | src/main/java/com/campusnexus/config/SwaggerConfig.java | Config | ✏️ Modified | OpenAPI/Swagger config + ngrok servers |
 | 104 | src/main/java/com/campusnexus/config/FirebaseConfig.java | Config | ✅ Created | Firebase init |
 | 105 | src/main/java/com/campusnexus/config/StripeConfig.java | Config | ✏️ Modified | Stripe StripeClient bean |
@@ -148,7 +148,7 @@
 | 107 | src/main/java/com/campusnexus/service/AuthService.java | Service | ✅ Created | Auth interface |
 | 108 | src/main/java/com/campusnexus/service/CollegeService.java | Service | ✅ Created | College interface |
 | 109 | src/main/java/com/campusnexus/service/DepartmentService.java | Service | ✅ Created | Department interface |
-| 110 | src/main/java/com/campusnexus/service/EventService.java | Service | ✅ Created | Event interface |
+| 110 | src/main/java/com/campusnexus/service/EventService.java | Service | ✏️ Modified | Added deleteEvent(UUID eventId, UUID currentUserId) method signature |
 | 111 | src/main/java/com/campusnexus/service/EventRegistrationService.java | Service | ✅ Created | Registration interface |
 | 112 | src/main/java/com/campusnexus/service/ClubService.java | Service | ✏️ Modified | Added status filtering to getClubRequests for HOD/Principal |
 | 113 | src/main/java/com/campusnexus/service/BatchService.java | Service | ✏️ Modified | Added getSectionsForStudent |
@@ -164,8 +164,11 @@
 | 123 | src/main/java/com/campusnexus/service/impl/AuthServiceImpl.java | ServiceImpl | ✅ Created | Auth with register/login/refresh/logout |
 | 124 | src/main/java/com/campusnexus/service/impl/CollegeServiceImpl.java | ServiceImpl | ✅ Created | College CRUD with code gen |
 | 125 | src/main/java/com/campusnexus/service/impl/DepartmentServiceImpl.java | ServiceImpl | ✅ Created | Department + HOD assignment |
-| 126 | src/main/java/com/campusnexus/service/impl/EventServiceImpl.java | ServiceImpl | ✏️ Modified | Applied global sorting by startDateTime DESC to all event methods |
-| 127 | src/main/java/com/campusnexus/service/impl/EventRegistrationServiceImpl.java | ServiceImpl | ✏️ Modified | Registration + Stripe |
+| 126 | src/main/java/com/campusnexus/service/impl/EventServiceImpl.java | ServiceImpl | ✏️ Modified | Full rewrite: removed DB-write on GET (checkAndUpdateStatus replaced with EventStatusUtil.compute); added deleteEvent with cascade cleanup; price normalization; updateEventStatus restricted to CANCELLED only |
+| 126.1 | src/main/java/com/campusnexus/service/impl/FirebaseStorageService.java | ServiceImpl | ✏️ Modified | Added deleteFile(String url) method for best-effort Firebase image removal on event delete |
+| 126.2 | src/main/java/com/campusnexus/util/EventStatusUtil.java | Util | ✅ Created | Pure static utility: computes EventStatus from datetimes (UTC); never writes to DB; shared by EventServiceImpl, EventRegistrationServiceImpl, ExternalEventServiceImpl |
+| 126.3 | normalize_ticket_prices.sql | Migration | ✅ Created | One-time SQL migration: normalizes all ticket_price < 0 to 0; wrapped in transaction with post-validation |
+| 127 | src/main/java/com/campusnexus/service/impl/EventRegistrationServiceImpl.java | ServiceImpl | ✏️ Modified | Added EventStatusUtil status guard (COMPLETED/CANCELLED blocked) before duplicate/capacity checks |
 | 128 | src/main/java/com/campusnexus/service/impl/ClubServiceImpl.java | ServiceImpl | ✏️ Modified | Implemented status filtering logic for club requests |
 | 129 | src/main/java/com/campusnexus/service/impl/BatchServiceImpl.java | ServiceImpl | ✏️ Modified | Implemented filtering in getSectionsForStudent for pending tasks |
 | 130 | src/main/java/com/campusnexus/service/impl/SubmissionServiceImpl.java | ServiceImpl | ✏️ Modified | Updated mapping logic to include teamMemberNames and teamSize |
@@ -179,15 +182,15 @@
 | 138 | src/main/java/com/campusnexus/service/impl/NotificationServiceImpl.java | ServiceImpl | ✅ Created | Email sending |
 | 139 | src/main/java/com/campusnexus/service/impl/FirebaseStorageService.java | ServiceImpl | ✅ Created | Firebase file upload |
 | 140 | src/main/java/com/campusnexus/service/impl/FCMService.java | ServiceImpl | ✅ Created | FCM push notifications |
-| 141 | src/main/java/com/campusnexus/service/impl/StripeService.java | ServiceImpl | ✏️ Modified | Stripe v31 StripeClient + webhook |
+| 141 | src/main/java/com/campusnexus/service/impl/StripeService.java | ServiceImpl | ✏️ Modified | Stripe v31 StripeClient + webhook with guest registration support |
 | 142 | src/main/java/com/campusnexus/controller/AuthController.java | Controller | ✏️ Modified | Auth endpoints + @CrossOrigin |
-| 143 | src/main/java/com/campusnexus/controller/CampusAdminController.java | Controller | ✏️ Modified | Admin endpoints + event participant/status |
+| 143 | src/main/java/com/campusnexus/controller/CampusAdminController.java | Controller | ✏️ Modified | Admin endpoints + event participant/status, and guest external participant listing |
 | 144 | src/main/java/com/campusnexus/controller/PrincipalController.java | Controller | ✏️ Modified | Supported status filter in club requests endpoint |
 | 145 | src/main/java/com/campusnexus/controller/HODController.java | Controller | ✏️ Modified | Supported status filter in club requests endpoint |
 | 146 | src/main/java/com/campusnexus/controller/ProfessorController.java | Controller | ✏️ Modified | Professor endpoints + event participant/status |
 | 147 | src/main/java/com/campusnexus/controller/StudentController.java | Controller | ✏️ Modified | Modified uploads, GET /notes to filter by student profile, and GET /timetable to support profile fallback |
 | 148 | src/main/java/com/campusnexus/controller/WebhookController.java | Controller | ✏️ Modified | Stripe webhook + @CrossOrigin |
-| 148.1 | src/main/java/com/campusnexus/controller/EventController.java | Controller | ✅ Created | Global Event endpoints |
+| 148.1 | src/main/java/com/campusnexus/controller/EventController.java | Controller | ✏️ Modified | Added DELETE /api/events/{eventId} (owner-only); updated updateEventStatus Javadoc to reflect CANCELLED-only restriction |
 | 149 | ../campus_connect_frontend/src/api/admin.api.js | API | ✏️ Modified | Admin API client |
 | 150 | ../campus_connect_frontend/src/api/professor.api.js | API | ✏️ Modified | Professor API client |
 | 150 | ../campus_connect_fronted/src/pages/student/EventsPage.jsx | Page | ✏️ Modified | Refactored to use isRegistered and optimistic updates |
@@ -206,13 +209,13 @@
 | 164 | src/main/java/com/campusnexus/dto/AISuggestRequest.java | DTO | ✅ Created | AI timetable suggestion request with teacher-subject mappings |
 | 165 | src/main/java/com/campusnexus/config/RestTemplateConfig.java | Config | ✅ Created | RestTemplate bean for Groq API calls |
 | 33 | src/main/java/com/campusnexus/entity/Timetable.java | Entity | ✏️ Modified | Added year, semester, division, status, teacherName; mapped startTime/endTime to from_time/to_time columns |
-| 71 | src/main/java/com/campusnexus/dto/TimetableRequest.java | DTO | ✏️ Modified | Replaced with departmentId, teacherId, subject, year, semester, division, dayOfWeek, startTime, endTime |
+| 71 | src/main/java/com/campusnexus/dto/TimetableRequest.java | DTO | ✏️ Modified | Removed obsolete @NotNull validation on departmentId field |
 | 88 | src/main/java/com/campusnexus/dto/TimetableResponse.java | DTO | ✏️ Modified | Added departmentId, teacherId, year, semester, division, status, hasConflict, conflictReason, type |
 | 50 | src/main/java/com/campusnexus/repository/TimetableRepository.java | Repository | ✏️ Modified | Added status-filtered query methods and clash check by status |
 | 49 | src/main/java/com/campusnexus/repository/TeacherAvailabilityRepository.java | Repository | ✏️ Modified | Added findByTeacher_IdAndStatusIn query |
-| 118 | src/main/java/com/campusnexus/service/TimetableService.java | Service | ✏️ Modified | Added 9 new methods for AI, publish, archive, student/professor views |
-| 134 | src/main/java/com/campusnexus/service/impl/TimetableServiceImpl.java | ServiceImpl | ✏️ Modified | AI Groq integration, status conflict resolution, custom mapping fallback |
-| 145 | src/main/java/com/campusnexus/controller/HODController.java | Controller | ✏️ Modified | Added AI suggest, publish, archive, archived, and professors search endpoints; modified GET/DELETE timetable |
+| 118 | src/main/java/com/campusnexus/service/TimetableService.java | Service | ✏️ Modified | Updated updateTimetable signature to accept departmentId |
+| 134 | src/main/java/com/campusnexus/service/impl/TimetableServiceImpl.java | ServiceImpl | ✏️ Modified | Added department ownership check to updateTimetable method |
+| 145 | src/main/java/com/campusnexus/controller/HODController.java | Controller | ✏️ Modified | Updated updateTimetable endpoint to retrieve and validate departmentId server-side |
 | 147 | src/main/java/com/campusnexus/controller/StudentController.java | Controller | ✏️ Modified | Timetable endpoint now requires year, semester, division params |
 | 146 | src/main/java/com/campusnexus/controller/ProfessorController.java | Controller | ✏️ Modified | Added GET /timetable and GET /timetable/merged endpoints |
 | 2 | src/main/resources/application.properties | Config | ✏️ Modified | Added Groq AI config properties |
@@ -224,6 +227,17 @@
 | 171 | src/main/java/com/campusnexus/controller/UploadController.java | Controller | ✏️ Modified | Generic file upload controller |
 | 172 | ../campus_connect_fronted/src/utils/constants.js | Config | ✏️ Modified | Updated YEAR_LABELS mapping to return numeric format |
 | 173 | ../campus_connect_fronted/src/pages/professor/NotesPage.jsx | Page | ✏️ Modified | Updated year selection dropdown option labels to Year 1-4 |
+| 174 | src/main/java/com/campusnexus/entity/ExternalRegistration.java | Entity | ✅ Created | Guest registration details entity |
+| 175 | src/main/java/com/campusnexus/repository/ExternalRegistrationRepository.java | Repository | ✅ Created | Repository for querying guest registrations |
+| 176 | src/main/java/com/campusnexus/dto/ExternalRegistrationRequest.java | DTO | ✅ Created | Request DTO for guest registrations |
+| 177 | src/main/java/com/campusnexus/dto/ExternalRegistrationResponse.java | DTO | ✅ Created | Response DTO for guest registrations |
+| 178 | src/main/java/com/campusnexus/dto/ExternalEventResponse.java | DTO | ✅ Created | Simplified response DTO for guest events |
+| 179 | src/main/java/com/campusnexus/service/ExternalEventService.java | Service | ✅ Created | Service interface for guest events |
+| 180 | src/main/java/com/campusnexus/service/impl/ExternalEventServiceImpl.java | ServiceImpl | ✏️ Modified | Added EventStatusUtil status guard (COMPLETED/CANCELLED blocked) before duplicate email check |
+| 181 | src/main/java/com/campusnexus/controller/ExternalEventController.java | Controller | ✅ Created | Public controller for guest event registrations |
+| 182 | ../campus_connect_fronted/src/pages/professor/TimetablePage.jsx | Component | ✏️ Modified | Removed Merged Schedule tab, query, and UI components from Professor module |
+| 183 | ../campus_connect_fronted/src/components/layout/DashboardLayout.jsx | Component | ✏️ Modified | Removed search bar and notification bell icon from header layout |
+| 184 | ../campus_connect_fronted/src/pages/student/TeacherAvailabilityPage.jsx | Component | ✏️ Modified | Removed non-functional Consult Online and Inquire via Chat buttons |
 
 ---
 
@@ -249,6 +263,7 @@
 | StudentProgress | student_progress | UUID | ManyToOne: student(User), updatedBy(User) | ✅ |
 | InvalidatedToken | invalidated_tokens | UUID | None | ✅ |
 | StudentProfile | student_profiles | UUID | OneToOne: User | ✅ |
+| ExternalRegistration | external_registrations | UUID | ManyToOne: Event (@JsonIgnore) | ✅ |
 
 ---
 
@@ -261,7 +276,8 @@
 | POST | /api/auth/refresh | AuthController | Public | Refresh token | ✅ |
 | POST | /api/auth/logout | AuthController | Public | Logout | ✅ |
 | GET | /api/events/{eventId}/participants | EventController | All | List event participants | ✅ |
-| PUT | /api/events/{eventId}/status | EventController | All | Update event status | ✅ |
+| PUT | /api/events/{eventId}/status | EventController | All (owner) | Cancel event (CANCELLED only) — time-based statuses are computed | ✏️ Modified |
+| DELETE | /api/events/{eventId} | EventController | All (owner) | Permanently delete event + cascade registrations/sub-events/image | ✅ Created |
 | POST | /api/admin/colleges | CampusAdminController | CAMPUS_ADMIN | Create college | ✅ |
 | GET | /api/admin/colleges | CampusAdminController | CAMPUS_ADMIN | List colleges | ✅ |
 | PUT | /api/admin/colleges/{id}/approve | CampusAdminController | CAMPUS_ADMIN | Approve college | ✅ |
@@ -274,6 +290,7 @@
 | POST | /api/admin/broadcasts | CampusAdminController | CAMPUS_ADMIN | Broadcast campus msg | ✅ |
 | GET | /api/admin/dashboard | CampusAdminController | CAMPUS_ADMIN | Dashboard stats | ✅ |
 | GET | /api/admin/events/{eventId}/participants | CampusAdminController | CAMPUS_ADMIN | List event participants | ✅ |
+| GET | /api/admin/events/{eventId}/external-participants | CampusAdminController | CAMPUS_ADMIN | List external event participants | ✅ Created |
 | PUT | /api/admin/events/{eventId}/status | CampusAdminController | CAMPUS_ADMIN | Update event status | ✅ |
 | POST | /api/principal/departments | PrincipalController | PRINCIPAL | Create department | ✅ |
 | GET | /api/principal/departments | PrincipalController | PRINCIPAL | List departments | ✅ |
@@ -364,6 +381,9 @@
 | POST | /api/upload/event-image | UploadController | Authenticated | Upload event poster | ✅ Created |
 | POST | /api/upload/notes | UploadController | Authenticated | Upload notes file | ✅ Created |
 | POST | /api/upload/submission | UploadController | Authenticated | Upload submission file | ✅ Created |
+| GET | /api/external/events | ExternalEventController | Public | Get open external events | ✅ Created |
+| POST | /api/external/events/{eventId}/register | ExternalEventController | Public | Register external guest | ✅ Created |
+| GET | /api/external/registrations | ExternalEventController | Public | Get guest registrations by email | ✅ Created |
 
 ---
 
@@ -397,7 +417,7 @@
 | AuthService | AuthServiceImpl | register, login, refreshToken, logout | ✅ |
 | CollegeService | CollegeServiceImpl | createCollege, getAllColleges, approveCollege, updateCollegeStatus, assignPrincipal | ✅ |
 | DepartmentService | DepartmentServiceImpl | createDepartment, getDepartmentsByCollege, assignHOD | ✅ |
-| EventService | EventServiceImpl | createEvent, getEventsByLevel/College/Department/Creator, getVisibleEventsForStudent, approveEvent, updateEventStatus | ✅ |
+| EventService | EventServiceImpl | createEvent, getEventsByLevel/College/Department/Creator, getVisibleEventsForStudent, approveEvent, updateEventStatus (CANCELLED only), **deleteEvent** | ✏️ Modified |
 | EventRegistrationService | EventRegistrationServiceImpl | registerForEvent, getStudentRegistrations, getTicketDetails, getParticipants | ✅ |
 | ClubService | ClubServiceImpl | createClub, getClubsByCollege, approveByHOD/Principal, rejectByHOD/Principal, getClubRequests, joinClub | ✅ |
 | BatchService | BatchServiceImpl | createBatch, getBatchesByProfessor, createSection, getSectionsByBatch, getSectionsForStudent, updateBatch, deleteBatch, updateSection, deleteSection | ✅ |
@@ -410,11 +430,12 @@
 | StudentProgressService | StudentProgressServiceImpl | updateProgress, getProgressByStudent | ✅ |
 | DashboardService | DashboardServiceImpl | getDashboardStats | ✅ |
 | NotificationService | NotificationServiceImpl | sendEmail (async) | ✅ |
-| — | FirebaseStorageService | uploadFile | ✅ |
+| — | FirebaseStorageService | uploadFile, **deleteFile** | ✏️ Modified |
 | — | FCMService | sendToTopic, sendToToken | ✅ |
 | — | StripeService | createPaymentIntent, handleWebhookEvent | ✅ |
 | StudentProfileService | StudentProfileServiceImpl | getStudentProfile, updateStudentProfile | ✅ |
 | CloudinaryService | CloudinaryServiceImpl | uploadFile, deleteFile | ✅ |
+| ExternalEventService | ExternalEventServiceImpl | getOpenExternalEvents, registerGuest, getMyRegistrations, getRegistrationsByEvent | ✅ |
 
 ---
 
@@ -470,6 +491,44 @@
 
 | Timestamp | Action | File | Details |
 |-----------|--------|------|---------|
+| Step-222 | MODIFY | src/main/java/com/campusnexus/service/impl/ExternalEventServiceImpl.java | Added EventStatusUtil status guard: COMPLETED and CANCELLED events reject new external registrations |
+| Step-221 | MODIFY | src/main/java/com/campusnexus/service/impl/EventRegistrationServiceImpl.java | Added EventStatusUtil status guard: COMPLETED and CANCELLED events reject new student registrations |
+| Step-220 | MODIFY | src/main/java/com/campusnexus/controller/EventController.java | Added DELETE /api/events/{eventId} endpoint; updated updateEventStatus description to reflect CANCELLED-only policy |
+| Step-219 | MODIFY | src/main/java/com/campusnexus/service/impl/FirebaseStorageService.java | Added deleteFile(String url) method for Firebase Storage blob deletion by URL |
+| Step-218 | MODIFY | src/main/java/com/campusnexus/service/impl/EventServiceImpl.java | Full rewrite: replaced checkAndUpdateStatus DB-write with pure EventStatusUtil.compute(); restricted updateEventStatus to CANCELLED; added deleteEvent with cascade; normalized negative ticketPrice in mapToResponse and createEvent |
+| Step-217 | MODIFY | src/main/java/com/campusnexus/service/EventService.java | Added deleteEvent(UUID eventId, UUID currentUserId) method signature with Javadoc |
+| Step-216 | CREATE | src/main/java/com/campusnexus/util/EventStatusUtil.java | New shared static utility: computes EventStatus from event datetimes using UTC; never touches DB |
+| Step-215 | MODIFY | src/main/java/com/campusnexus/dto/EventCreateRequest.java | Added @DecimalMin("0.00") and @Digits validation on ticketPrice field |
+| Step-214 | MODIFY | normalize_ticket_prices.sql | Created one-time SQL migration to normalize legacy ticket_price = -1 records to 0 |
+| Step-213 | MODIFY | ../campus_connect_fronted/src/pages/student/TeacherAvailabilityPage.jsx | Removed non-functional Consult Online and Inquire via Chat buttons |
+| Step-212 | MODIFY | ../campus_connect_fronted/src/components/layout/DashboardLayout.jsx | Removed search bar and notification bell icon from header layout |
+| Step-211 | MODIFY | ../campus_connect_frontend/src/api/professor.api.js | Removed unused getMergedSchedule API call |
+| Step-210 | MODIFY | ../campus_connect_fronted/src/pages/professor/TimetablePage.jsx | Removed Merged Schedule tab, query, and UI components from Professor module |
+| Step-209 | MODIFY | src/test/java/com/project/campus_connect_backend/CampusConnectBackendApplicationTests.java | Explicitly configured SpringBootTest classes parameter to fix context loading issue |
+| Step-208 | MODIFY | src/main/java/com/campusnexus/controller/HODController.java | Updated updateTimetable endpoint to retrieve and validate HOD department ID server-side |
+| Step-207 | MODIFY | src/main/java/com/campusnexus/service/impl/TimetableServiceImpl.java | Added department ownership verification logic to updateTimetable method |
+| Step-206 | MODIFY | src/main/java/com/campusnexus/service/TimetableService.java | Updated updateTimetable signature to accept HOD's department ID |
+| Step-205 | MODIFY | src/main/java/com/campusnexus/dto/TimetableRequest.java | Removed obsolete @NotNull validation from departmentId field |
+| Step-204 | MODIFY | src/main/java/com/campusnexus/entity/Event.java | Changed openToExternal column definition to nullable=true to resolve database schema alteration failures |
+| Step-203 | MODIFY | src/main/java/com/campusnexus/service/impl/StripeService.java | Resolved duplicate Event class import conflict |
+| Step-202 | MODIFY | pom.xml | Removed maven-compiler-plugin configuration to let Spring Boot parent handle Lombok |
+| Step-201 | MODIFY | pom.xml | Removed unused mapstruct-processor from annotation processor paths |
+| Step-200 | MODIFY | src/main/java/com/campusnexus/config/SecurityConfig.java | Permitted external guest endpoints without authentication |
+| Step-199 | MODIFY | src/main/java/com/campusnexus/controller/CampusAdminController.java | Added GET /api/admin/events/{eventId}/external-participants endpoint |
+| Step-198 | CREATE | src/main/java/com/campusnexus/controller/ExternalEventController.java | Created ExternalEventController for guest endpoints |
+| Step-197 | MODIFY | src/main/java/com/campusnexus/service/impl/StripeService.java | Supported guest registrations in createPaymentIntent and webhook handler |
+| Step-196 | MODIFY | src/main/java/com/campusnexus/service/impl/EventServiceImpl.java | Set and mapped openToExternal field for events |
+| Step-195 | CREATE | src/main/java/com/campusnexus/service/impl/ExternalEventServiceImpl.java | Created ExternalEventServiceImpl class |
+| Step-194 | MODIFY | src/main/java/com/campusnexus/repository/EventRepository.java | Added findByOpenToExternalTrueAndStatusInOrderByStartDateTimeDesc for guest registrations |
+| Step-193 | CREATE | src/main/java/com/campusnexus/service/ExternalEventService.java | Created ExternalEventService interface |
+| Step-192 | MODIFY | src/main/java/com/campusnexus/dto/EventResponse.java | Added openToExternal field to event response DTO |
+| Step-191 | MODIFY | src/main/java/com/campusnexus/dto/EventCreateRequest.java | Added openToExternal field to event creation request |
+| Step-190 | CREATE | src/main/java/com/campusnexus/dto/ExternalEventResponse.java | Created ExternalEventResponse DTO |
+| Step-189 | CREATE | src/main/java/com/campusnexus/dto/ExternalRegistrationResponse.java | Created ExternalRegistrationResponse DTO |
+| Step-188 | CREATE | src/main/java/com/campusnexus/dto/ExternalRegistrationRequest.java | Created ExternalRegistrationRequest DTO |
+| Step-187 | CREATE | src/main/java/com/campusnexus/repository/ExternalRegistrationRepository.java | Created ExternalRegistrationRepository interface |
+| Step-186 | CREATE | src/main/java/com/campusnexus/entity/ExternalRegistration.java | Created ExternalRegistration entity for guest registrations |
+| Step-185 | MODIFY | src/main/java/com/campusnexus/entity/Event.java | Added openToExternal field for guest registrations |
 | Step-184 | MODIFY | ../campus_connect_fronted/src/pages/hod/TimetablePage.jsx | Added departmentId from useAuthStore to manual add slot request payload and replaced form tag with div block |
 | Step-183 | MODIFY | ../campus_connect_fronted/src/pages/professor/NotesPage.jsx | Updated year selection dropdown option labels to Year 1-4 |
 | Step-182 | MODIFY | ../campus_connect_fronted/src/utils/constants.js | Updated YEAR_LABELS mapping to return numeric format |
@@ -702,12 +761,41 @@
 ---
 
 ## Final Summary
-- Total Files Created: 169
-- Total Entities: 18
-- Total Endpoints: 108
+- Total Files Created: 180 (+3 from this session: EventStatusUtil.java, normalize_ticket_prices.sql, and updated EventServiceImpl/EventService/EventController/EventCreateRequest/EventRegistrationServiceImpl/ExternalEventServiceImpl/FirebaseStorageService)
+- Total Entities: 19
+- Total Endpoints: 113 (+1: DELETE /api/events/{eventId})
 - Total Enums: 16
-- Total Services: 21 (18 interfaces + 3 standalone)
+- Total Services: 22 (19 interfaces + 3 standalone)
 - Build Command: mvn clean install
 - Run Command: mvn spring-boot:run
 - Swagger URL: http://localhost:8080/swagger-ui.html
 - Default Admin Login: admin@campusnexus.com / Admin@123
+
+---
+
+## Event Module Fix Notes (Step-215 to Step-222)
+
+### Issue #1 — Free Event Price
+- `ticketPrice` now validated with `@DecimalMin("0.00")` in `EventCreateRequest`
+- All `mapToResponse` calls normalize any negative stored price to `0` at read time
+- One-time SQL migration `normalize_ticket_prices.sql` cleans legacy `ticket_price = -1` records
+- Standard: `0 = FREE`, `> 0 = PAID`, negatives forbidden
+
+### Issue #2 — Event Status
+- Removed `checkAndUpdateStatus()` which wrote to DB on every GET
+- All status now computed via `EventStatusUtil.compute(event)` — a pure static method using UTC datetimes
+- CANCELLED is the only DB-persisted status override (user action)
+- UPCOMING, ONGOING, COMPLETED transition automatically based on server UTC time
+- `updateEventStatus` endpoint now rejects anything other than CANCELLED with HTTP 400
+
+### Issue #3 — Registration Validation
+- `EventRegistrationServiceImpl.registerForEvent()` now rejects COMPLETED and CANCELLED events
+- `ExternalEventServiceImpl.registerGuest()` has the same guard
+- Both throw `BadRequestException` with descriptive messages
+- Guard runs BEFORE duplicate and capacity checks
+
+### Issue #4 — Owner Delete
+- New `DELETE /api/events/{eventId}` endpoint in `EventController`
+- Service verifies caller is the event creator (throws `UnauthorizedException` otherwise)
+- Cascade order: sub-event external regs → sub-event internal regs → sub-events → parent external regs → parent internal regs → Firebase image → event
+- Firebase cleanup is best-effort: failure logs a warning but does not abort deletion

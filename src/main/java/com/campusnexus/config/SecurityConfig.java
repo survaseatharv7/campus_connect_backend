@@ -2,6 +2,7 @@ package com.campusnexus.config;
 
 import com.campusnexus.security.JwtAuthEntryPoint;
 import com.campusnexus.security.JwtAuthFilter;
+import org.springframework.http.HttpMethod;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -49,6 +50,9 @@ public class SecurityConfig {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.GET,  "/api/external/events").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/external/events/*/register").permitAll()
+                        .requestMatchers(HttpMethod.GET,  "/api/external/registrations").permitAll()
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/swagger-ui/**",

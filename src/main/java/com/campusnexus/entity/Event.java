@@ -1,4 +1,5 @@
 package com.campusnexus.entity;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import com.campusnexus.enums.EventLevel;
@@ -20,7 +21,7 @@ import java.util.UUID;
 @Entity
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Table(name = "events")
-@JsonIgnoreProperties({"registrations", "createdBy", "college", "department", "club", "parentEvent"})
+@JsonIgnoreProperties({ "registrations", "createdBy", "college", "department", "club", "parentEvent" })
 public class Event {
 
     @Id
@@ -90,6 +91,10 @@ public class Event {
     @Column(nullable = false)
     @Builder.Default
     private Boolean isPaid = false;
+
+    @Column(nullable = true)
+    @Builder.Default
+    private boolean openToExternal = false;
 
     @Column(precision = 10, scale = 2)
     private BigDecimal ticketPrice;

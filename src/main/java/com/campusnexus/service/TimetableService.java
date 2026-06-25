@@ -8,7 +8,7 @@ import java.util.UUID;
 public interface TimetableService {
     TimetableResponse createTimetable(TimetableRequest request, UUID departmentId);
     List<TimetableResponse> getTimetableByDepartment(UUID departmentId);
-    TimetableResponse updateTimetable(UUID id, TimetableRequest request);
+    TimetableResponse updateTimetable(UUID id, TimetableRequest request, UUID departmentId);
     void deleteTimetable(UUID id);
 
     // New AI-powered timetable methods

@@ -4,13 +4,18 @@ import com.campusnexus.dto.*;
 import com.campusnexus.entity.*;
 import com.campusnexus.enums.EventLevel;
 import com.campusnexus.enums.EventStatus;
+import com.campusnexus.exception.BadRequestException;
 import com.campusnexus.exception.ResourceNotFoundException;
 import com.campusnexus.exception.UnauthorizedException;
 import com.campusnexus.repository.*;
 import com.campusnexus.service.EventService;
+import com.campusnexus.util.EventStatusUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -19,25 +24,33 @@ import java.util.stream.Collectors;
 @Service
 public class EventServiceImpl implements EventService {
 
+    private static final Logger logger = LoggerFactory.getLogger(EventServiceImpl.class);
+
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
     private final CollegeRepository collegeRepository;
     private final DepartmentRepository departmentRepository;
     private final ClubRepository clubRepository;
     private final EventRegistrationRepository eventRegistrationRepository;
+    private final ExternalRegistrationRepository externalRegistrationRepository;
+    private final FirebaseStorageService firebaseStorageService;
 
     public EventServiceImpl(EventRepository eventRepository,
-                            UserRepository userRepository,
-                            CollegeRepository collegeRepository,
-                            DepartmentRepository departmentRepository,
-                            ClubRepository clubRepository,
-                            EventRegistrationRepository eventRegistrationRepository) {
+            UserRepository userRepository,
+            CollegeRepository collegeRepository,
+            DepartmentRepository departmentRepository,
+            ClubRepository clubRepository,
+            EventRegistrationRepository eventRegistrationRepository,
+            ExternalRegistrationRepository externalRegistrationRepository,
+            FirebaseStorageService firebaseStorageService) {
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
         this.collegeRepository = collegeRepository;
         this.departmentRepository = departmentRepository;
         this.clubRepository = clubRepository;
         this.eventRegistrationRepository = eventRegistrationRepository;
+        this.externalRegistrationRepository = externalRegistrationRepository;
+        this.firebaseStorageService = firebaseStorageService;
     }
 
     @Override
@@ -45,6 +58,12 @@ public class EventServiceImpl implements EventService {
     public EventResponse createEvent(EventCreateRequest request, UUID createdById) {
         User creator = userRepository.findById(createdById)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        // Normalize ticket price — negative values are not permitted
+        BigDecimal ticketPrice = request.getTicketPrice();
+        if (ticketPrice != null && ticketPrice.compareTo(BigDecimal.ZERO) < 0) {
+            ticketPrice = BigDecimal.ZERO;
+        }
 
         Event event = Event.builder()
                 .title(request.getTitle())
@@ -59,7 +78,8 @@ public class EventServiceImpl implements EventService {
                 .venue(request.getVenue())
                 .maxParticipants(request.getMaxParticipants())
                 .isPaid(request.getIsPaid() != null ? request.getIsPaid() : false)
-                .ticketPrice(request.getTicketPrice())
+                .ticketPrice(ticketPrice)
+                .openToExternal(request.isOpenToExternal())
                 .build();
 
         if (request.getEventLevel() == EventLevel.COLLEGE) {
@@ -134,7 +154,8 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public List<EventResponse> getVisibleEventsForStudent(UUID collegeId, UUID departmentId, UUID studentId) {
-        List<Event> events = eventRepository.findByCollegeIdOrEventLevelOrderByStartDateTimeDesc(collegeId, EventLevel.CAMPUS);
+        List<Event> events = eventRepository.findByCollegeIdOrEventLevelOrderByStartDateTimeDesc(collegeId,
+                EventLevel.CAMPUS);
         List<Event> deptEvents = eventRepository.findByDepartmentIdOrderByStartDateTimeDesc(departmentId);
         events.addAll(deptEvents);
 
@@ -155,11 +176,23 @@ public class EventServiceImpl implements EventService {
     public EventResponse approveEvent(UUID eventId) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new ResourceNotFoundException("Event not found"));
+        // Approved events start as UPCOMING — the DB column stores UPCOMING as the base.
+        // The dynamic compute will determine the actual displayed status.
         event.setStatus(EventStatus.UPCOMING);
         event = eventRepository.save(event);
         return mapToResponse(event, null);
     }
 
+    /**
+     * Update the persisted status of an event.
+     *
+     * <p>Only {@link EventStatus#CANCELLED} may be set manually. Time-based statuses
+     * (UPCOMING, ONGOING, COMPLETED) are computed dynamically in {@link #mapToResponse}
+     * and must NOT be written to the database through this method.
+     *
+     * @throws BadRequestException   if an attempt is made to manually set a time-based status
+     * @throws UnauthorizedException if the caller is not the event creator
+     */
     @Override
     @Transactional
     public EventResponse updateEventStatus(UUID eventId, EventStatus status, UUID currentUserId) {
@@ -170,42 +203,122 @@ public class EventServiceImpl implements EventService {
             throw new UnauthorizedException("Only event creator can update status");
         }
 
-        event.setStatus(status);
+        // Guard: only CANCELLED is a valid manual override.
+        if (status != EventStatus.CANCELLED) {
+            throw new BadRequestException(
+                    "Only CANCELLED status can be set manually. " +
+                    "UPCOMING, ONGOING, and COMPLETED are computed automatically from event dates.");
+        }
+
+        event.setStatus(EventStatus.CANCELLED);
         event = eventRepository.save(event);
         return mapToResponse(event, null);
     }
 
-    private void checkAndUpdateStatus(Event event) {
-        if (event.getStatus() == EventStatus.CANCELLED || event.getStatus() == EventStatus.COMPLETED) {
-            return;
+    /**
+     * Permanently delete an event and all its dependent data.
+     *
+     * <p>Cascade order (explicit, to respect FK constraints):
+     * <ol>
+     *   <li>External registrations for each sub-event</li>
+     *   <li>Internal registrations for each sub-event</li>
+     *   <li>Sub-events (children of this event)</li>
+     *   <li>External registrations for the parent event</li>
+     *   <li>Internal registrations for the parent event</li>
+     *   <li>Firebase poster image — best-effort (failure is logged, not re-thrown)</li>
+     *   <li>The event entity itself</li>
+     * </ol>
+     */
+    @Override
+    @Transactional
+    public void deleteEvent(UUID eventId, UUID currentUserId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Event not found"));
+
+        if (!event.getCreatedBy().getId().equals(currentUserId)) {
+            throw new UnauthorizedException("Only the event owner can delete this event");
         }
-        java.time.LocalDateTime now = java.time.LocalDateTime.now();
-        boolean changed = false;
-        if (now.isAfter(event.getEndDateTime())) {
-            event.setStatus(EventStatus.COMPLETED);
-            changed = true;
-        } else if (now.isAfter(event.getStartDateTime()) && now.isBefore(event.getEndDateTime()) && event.getStatus() != EventStatus.ONGOING) {
-            event.setStatus(EventStatus.ONGOING);
-            changed = true;
+
+        // 1. Handle sub-events first to avoid FK violations
+        List<Event> subEvents = eventRepository.findByParentEventIdOrderByStartDateTimeDesc(eventId);
+        for (Event sub : subEvents) {
+            deleteDependentRecords(sub.getId());
+            eventRepository.delete(sub);
         }
-        if (changed) {
-            eventRepository.save(event);
+
+        // 2. Delete this event's own dependent records
+        deleteDependentRecords(eventId);
+
+        // 3. Best-effort Firebase image cleanup
+        String posterUrl = event.getPosterUrl();
+        if (posterUrl != null && !posterUrl.isBlank()) {
+            try {
+                firebaseStorageService.deleteFile(posterUrl);
+            } catch (Exception ex) {
+                logger.warn("Failed to delete Firebase image for event {}: {}", eventId, ex.getMessage());
+                // Do not abort event deletion because of image cleanup failure
+            }
+        }
+
+        // 4. Delete the event itself
+        eventRepository.delete(event);
+    }
+
+    // ─── Private helpers ─────────────────────────────────────────────────────────
+
+    /**
+     * Delete all registration records (internal + external) for a given event ID.
+     * Called before deleting the event row itself.
+     */
+    private void deleteDependentRecords(UUID eventId) {
+        List<EventRegistration> internalRegs = eventRegistrationRepository.findByEventId(eventId);
+        if (!internalRegs.isEmpty()) {
+            eventRegistrationRepository.deleteAll(internalRegs);
+        }
+
+        List<ExternalRegistration> externalRegs = externalRegistrationRepository.findByEvent_Id(eventId);
+        if (!externalRegs.isEmpty()) {
+            externalRegistrationRepository.deleteAll(externalRegs);
         }
     }
 
+    /**
+     * Map an {@link Event} entity to an {@link EventResponse} DTO.
+     *
+     * <p><b>Status rule:</b> The status field in the DTO is ALWAYS computed
+     * dynamically via {@link EventStatusUtil#compute(Event)} and is NEVER taken
+     * directly from the database. This ensures time-based transitions (UPCOMING →
+     * ONGOING → COMPLETED) happen without any database writes during reads.
+     *
+     * <p><b>Price rule:</b> {@code ticketPrice} is normalised to {@code 0} if the
+     * stored value is negative (legacy data guard).
+     */
     private EventResponse mapToResponse(Event event, Set<UUID> registeredEventIds) {
-        checkAndUpdateStatus(event);
+        // Compute effective status without writing to DB
+        EventStatus effectiveStatus = EventStatusUtil.compute(event);
+
+        // Normalise negative prices (legacy data guard — should not occur after migration)
+        BigDecimal ticketPrice = event.getTicketPrice();
+        if (ticketPrice != null && ticketPrice.compareTo(BigDecimal.ZERO) < 0) {
+            ticketPrice = BigDecimal.ZERO;
+        }
+
+        // Build sub-event list
         List<EventResponse> subEvents = eventRepository.findByParentEventIdOrderByStartDateTimeDesc(event.getId())
                 .stream()
                 .map(sub -> {
-                    checkAndUpdateStatus(sub);
+                    EventStatus subStatus = EventStatusUtil.compute(sub);
+                    BigDecimal subPrice = sub.getTicketPrice();
+                    if (subPrice != null && subPrice.compareTo(BigDecimal.ZERO) < 0) {
+                        subPrice = BigDecimal.ZERO;
+                    }
                     return EventResponse.builder()
                             .id(sub.getId())
                             .title(sub.getTitle())
                             .description(sub.getDescription())
                             .eventLevel(sub.getEventLevel())
                             .eventType(sub.getEventType())
-                            .status(sub.getStatus())
+                            .status(subStatus)
                             .startDateTime(sub.getStartDateTime())
                             .endDateTime(sub.getEndDateTime())
                             .venue(sub.getVenue())
@@ -213,7 +326,10 @@ public class EventServiceImpl implements EventService {
                             .createdAt(sub.getCreatedAt())
                             .registeredCount(sub.getRegisteredCount())
                             .participantCount(sub.getRegisteredCount())
+                            .isPaid(sub.getIsPaid())
+                            .ticketPrice(subPrice)
                             .isRegistered(registeredEventIds != null && registeredEventIds.contains(sub.getId()))
+                            .openToExternal(sub.isOpenToExternal())
                             .build();
                 })
                 .collect(Collectors.toList());
@@ -225,7 +341,7 @@ public class EventServiceImpl implements EventService {
                 .posterUrl(event.getPosterUrl())
                 .eventLevel(event.getEventLevel())
                 .eventType(event.getEventType())
-                .status(event.getStatus())
+                .status(effectiveStatus)
                 .createdByName(event.getCreatedBy().getName())
                 .startDateTime(event.getStartDateTime())
                 .endDateTime(event.getEndDateTime())
@@ -234,9 +350,10 @@ public class EventServiceImpl implements EventService {
                 .registeredCount(event.getRegisteredCount())
                 .participantCount(event.getRegisteredCount())
                 .isPaid(event.getIsPaid())
-                .ticketPrice(event.getTicketPrice())
+                .ticketPrice(ticketPrice)
                 .createdAt(event.getCreatedAt())
                 .isRegistered(registeredEventIds != null && registeredEventIds.contains(event.getId()))
+                .openToExternal(event.isOpenToExternal())
                 .subEvents(subEvents.isEmpty() ? null : subEvents)
                 .build();
     }

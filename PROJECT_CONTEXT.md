@@ -238,6 +238,7 @@
 | 182 | ../campus_connect_fronted/src/pages/professor/TimetablePage.jsx | Component | ✏️ Modified | Removed Merged Schedule tab, query, and UI components from Professor module |
 | 183 | ../campus_connect_fronted/src/components/layout/DashboardLayout.jsx | Component | ✏️ Modified | Removed search bar and notification bell icon from header layout |
 | 184 | ../campus_connect_fronted/src/pages/student/TeacherAvailabilityPage.jsx | Component | ✏️ Modified | Removed non-functional Consult Online and Inquire via Chat buttons |
+| 185 | dockerfile | Config | ✏️ Modified | Updated to multi-stage configuration using Java 17, correcting the JAR filename and adding dynamic port binding for Render deployment |
 
 ---
 
@@ -491,6 +492,7 @@
 
 | Timestamp | Action | File | Details |
 |-----------|--------|------|---------|
+| Step-223 | MODIFY | dockerfile | Updated to multi-stage build, set Java version to 17, corrected build artifact JAR filename, and added dynamic port binding for Render deployment |
 | Step-222 | MODIFY | src/main/java/com/campusnexus/service/impl/ExternalEventServiceImpl.java | Added EventStatusUtil status guard: COMPLETED and CANCELLED events reject new external registrations |
 | Step-221 | MODIFY | src/main/java/com/campusnexus/service/impl/EventRegistrationServiceImpl.java | Added EventStatusUtil status guard: COMPLETED and CANCELLED events reject new student registrations |
 | Step-220 | MODIFY | src/main/java/com/campusnexus/controller/EventController.java | Added DELETE /api/events/{eventId} endpoint; updated updateEventStatus description to reflect CANCELLED-only policy |
